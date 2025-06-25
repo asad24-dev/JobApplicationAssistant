@@ -1,0 +1,46 @@
+{
+    "manifest_version": 3,
+    "name": "Job Application Assistant",
+    "version": "1.0",
+    "description": "AI-powered assistant that helps fill job applications with your profile data.",
+    "permissions": [
+      "storage",
+      "activeTab"
+    ],
+    "host_permissions": [
+      "*://*.linkedin.com/*",
+      "*://*.indeed.com/*",
+      "*://*.glassdoor.com/*",
+      "<all_urls>"
+    ],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+      }
+    },
+    "content_scripts": [
+      {
+        "matches": [
+          "*://*.linkedin.com/*",
+          "*://*.indeed.com/*",
+          "*://*.glassdoor.com/*",
+          "<all_urls>"
+        ],
+        "js": [
+          "content.js"
+        ],
+        "css": [
+          "styles.css"
+        ],
+        "run_at": "document_end"
+      }
+    ],
+    "icons": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  }

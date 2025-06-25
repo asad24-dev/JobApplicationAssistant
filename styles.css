@@ -1,0 +1,18 @@
+.suggest-answer-btn {
+    display: block;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: #fff;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.suggest-answer-btn:hover {
+    opacity: 1;
+}
