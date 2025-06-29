@@ -1,26 +1,28 @@
+// Modified popup.js code to support scraping LinkedIn job description,
+// full LinkedIn profile info, and uploading/saving resume data
+
+// === DOM Ready ===
 document.addEventListener('DOMContentLoaded', () => {
     const saveButton = document.getElementById('saveProfile');
-    const scrapeButton = document.getElementById('scrapeJob');
+    const scrapeJobButton = document.getElementById('scrapeJob');
+    const scrapeProfileButton = document.getElementById('scrapeLinkedInProfile');
+    const uploadResumeButton = document.getElementById('uploadResume');
 
     loadProfile();
     saveButton.addEventListener('click', saveProfile);
-    scrapeButton.addEventListener('click', scrapeJob);
+    scrapeJobButton.addEventListener('click', scrapeLinkedInJob);
+    scrapeProfileButton.addEventListener('click', scrapeLinkedInProfile);
+    uploadResumeButton.addEventListener('change', handleResumeUpload);
 });
 
 function loadProfile() {
     chrome.storage.local.get(['userProfile'], (result) => {
         if (result.userProfile) {
             const profile = result.userProfile;
-            
-            document.getElementById('fullName').value = profile.fullName || '';
-            document.getElementById('email').value = profile.email || '';
-            document.getElementById('phone').value = profile.phone || '';
-            document.getElementById('location').value = profile.location || '';
-            document.getElementById('summary').value = profile.summary || '';
-            document.getElementById('experience').value = profile.experience || '';
-            document.getElementById('skills').value = profile.skills || '';
-            document.getElementById('degree').value = profile.degree || '';
-            document.getElementById('university').value = profile.university || '';
+            for (let key in profile) {
+                const input = document.getElementById(key);
+                if (input) input.value = profile[key];
+            }
         }
     });
 }
@@ -36,43 +38,61 @@ function saveProfile() {
         skills: document.getElementById('skills').value,
         degree: document.getElementById('degree').value,
         university: document.getElementById('university').value,
+        scrapedJob: document.getElementById('scrapedJobData').value,
+        scrapedProfile: document.getElementById('scrapedProfileData').value,
         lastUpdated: new Date().toISOString()
     };
 
-    // Validate required fields
     if (!profile.fullName || !profile.email) {
-        showStatus('Please fill in at least your name and email address.', 'error');
+        showStatus('Please fill in at least your name and email.', 'error');
         return;
     }
 
     chrome.storage.local.set({ userProfile: profile }, () => {
-        showStatus('Profile saved successfully!', 'success');
+        showStatus('Profile and scraped data saved.', 'success');
     });
 }
 
 function showStatus(message, type) {
-    const statusElement = document.getElementById('status');
-    statusElement.textContent = message;
-    statusElement.className = `status ${type}`;
-    statusElement.style.display = 'block';
-    
-    setTimeout(() => {
-        statusElement.style.display = 'none';
-    }, 3000);
+    const status = document.getElementById('status');
+    status.textContent = message;
+    status.className = `status ${type}`;
+    status.style.display = 'block';
+    setTimeout(() => status.style.display = 'none', 3000);
 }
 
-function scrapeJob() {
+function scrapeLinkedInJob() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "SCRAPE_JOB" }, (response) => {
-            if (chrome.runtime.lastError) {
-                document.getElementById('scrapedJobData').value = 'Error: Unable to scrape this page.';
+        chrome.tabs.sendMessage(tabs[0].id, { action: "SCRAPE_LINKEDIN_JOB" }, (response) => {
+            if (chrome.runtime.lastError || !response || !response.text) {
+                document.getElementById('scrapedJobData').value = 'Error: Could not scrape job.';
                 return;
             }
-            if (response && response.text) {
-                document.getElementById('scrapedJobData').value = response.text;
-            } else {
-                document.getElementById('scrapedJobData').value = 'No job listing content detected.';
-            }
+            document.getElementById('scrapedJobData').value = response.text;
         });
     });
+}
+
+function scrapeLinkedInProfile() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "SCRAPE_LINKEDIN_PROFILE" }, (response) => {
+            if (chrome.runtime.lastError || !response || !response.text) {
+                document.getElementById('scrapedProfileData').value = 'Error: Could not scrape profile.';
+                return;
+            }
+            document.getElementById('scrapedProfileData').value = response.text;
+        });
+    });
+}
+
+function handleResumeUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        document.getElementById('scrapedProfileData').value = reader.result;
+        showStatus('Resume uploaded successfully!', 'success');
+    };
+    reader.readAsText(file);
 }
