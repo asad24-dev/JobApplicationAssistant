@@ -1,5 +1,4 @@
-// Enhanced content.js with LinkedIn profile scraping support
-
+// === content.js ===
 class JobAssistant {
     constructor() {
         this.userProfile = null;
@@ -143,55 +142,24 @@ class JobAssistant {
 
     setupMessageListener() {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            if (request.action === "SCRAPE_JOB" || request.action === "SCRAPE_LINKEDIN_JOB") {
-                let jobText = "";
-                const host = window.location.hostname;
-
-                if (host.includes("linkedin.com")) {
-                    const el = document.querySelector(".description__text, .show-more-less-html__markup");
-                    jobText = el?.innerText?.trim();
-                }
-                else if (host.includes("greenhouse.io")) {
-                    const el = document.querySelector(".content, .section-wrapper, .description");
-                    jobText = el?.innerText?.trim();
-                }
-                else if (host.includes("lever.co")) {
-                    const el = document.querySelector("div.content, div.description");
-                    jobText = el?.innerText?.trim();
-                }
-                else if (host.includes("myworkdayjobs.com")) {
-                    const el = document.querySelector("[data-automation-id='jobPostingDescription']");
-                    jobText = el?.innerText?.trim();
-                }
-
-                if (!jobText || jobText.length < 100) {
-                    const selectors = [
-                        ".job-description", ".description", ".job-desc",
-                        "[id*='description']", "[class*='description']",
-                        "section", "article"
-                    ];
-                    for (const sel of selectors) {
-                        const el = document.querySelector(sel);
-                        if (el && el.innerText.length > 100) {
-                            jobText = el.innerText.trim();
-                            break;
-                        }
-                    }
-                }
-
-                sendResponse({ text: jobText || "No job description found on this site." });
+            const host = window.location.hostname;
+            if (request.action === "SCRAPE_LINKEDIN_JOB") {
+                setTimeout(() => {
+                    let jobText = "";
+                    const el = document.querySelector(".jobs-description__content, .show-more-less-html__markup, .jobs-description__container");
+                    jobText = el?.innerText?.trim() || "No job description found.";
+                    sendResponse({ text: jobText });
+                }, 1500);
                 return true;
             }
-
-            if (request.action === "SCRAPE_LINKEDIN_PROFILE") {
+            else if (request.action === "SCRAPE_LINKEDIN_PROFILE") {
                 let profileText = "";
-                try {
-                    const sections = document.querySelectorAll('section');
-                    profileText = Array.from(sections).map(el => el.innerText.trim()).join("\n\n");
-                } catch (e) {
-                    profileText = "Error extracting profile.";
-                }
-                sendResponse({ text: profileText || "No profile data found." });
+                const name = document.querySelector('.text-heading-xlarge')?.innerText;
+                const title = document.querySelector('.text-body-medium')?.innerText;
+                const about = document.querySelector('.pv-shared-text-with-see-more')?.innerText;
+                const experience = document.querySelector('#experience ~ div')?.innerText;
+                profileText = `Name: ${name}\nTitle: ${title}\nAbout: ${about}\nExperience: ${experience}`;
+                sendResponse({ text: profileText });
                 return true;
             }
         });
