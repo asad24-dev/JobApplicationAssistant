@@ -1,4 +1,6 @@
-// === popup.js ===
+// popup.js
+
+// DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
     const saveButton = document.getElementById('saveProfile');
     const scrapeJobButton = document.getElementById('scrapeJob');
@@ -30,12 +32,12 @@ function saveProfile() {
         email: document.getElementById('email').value,
         phone: document.getElementById('phone').value,
         location: document.getElementById('location').value,
+        linkedinUrl: document.getElementById('linkedinUrl')?.value || '',
         summary: document.getElementById('summary').value,
         experience: document.getElementById('experience').value,
         skills: document.getElementById('skills').value,
         degree: document.getElementById('degree').value,
         university: document.getElementById('university').value,
-        linkedinUrl: document.getElementById('linkedinUrl').value,
         scrapedJob: document.getElementById('scrapedJobData').value,
         scrapedProfile: document.getElementById('scrapedProfileData').value,
         lastUpdated: new Date().toISOString()
@@ -89,8 +91,7 @@ function handleResumeUpload(event) {
 
     const reader = new FileReader();
     reader.onload = () => {
-        const text = reader.result;
-        document.getElementById('scrapedProfileData').value = text;
+        document.getElementById('scrapedProfileData').value = reader.result;
         showStatus('Resume uploaded successfully!', 'success');
     };
     reader.readAsText(file);
