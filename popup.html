@@ -77,6 +77,7 @@
         <input type="email" id="email" placeholder="Email Address" required>
         <input type="tel" id="phone" placeholder="Phone Number">
         <input type="text" id="location" placeholder="City, State/Country">
+        <input type="text" id="linkedinUrl" placeholder="LinkedIn Profile URL">
     </div>
 
     <div class="section">
@@ -106,7 +107,7 @@
     <div class="section">
         <h3>Scrape LinkedIn Profile</h3>
         <button id="scrapeLinkedInProfile">Scrape Profile</button>
-        <textarea id="scrapedProfileData" placeholder="Scraped LinkedIn profile info or resume will appear here..." readonly></textarea>
+        <textarea id="scrapedProfileData" placeholder="Scraped LinkedIn profile info or resume content will appear here..." readonly></textarea>
     </div>
 
     <!-- 📁 Upload Resume -->
@@ -116,9 +117,6 @@
         <small>Text content will be extracted and shown above.</small>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
-    <script src="resumeParser.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>
