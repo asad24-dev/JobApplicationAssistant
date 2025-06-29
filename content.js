@@ -1,3 +1,5 @@
+// Enhanced content.js with LinkedIn profile scraping support
+
 class JobAssistant {
     constructor() {
         this.userProfile = null;
@@ -139,97 +141,64 @@ class JobAssistant {
         document.body.appendChild(modal);
     }
 
-    // --- NEW: Message listener for scraping job description ---
     setupMessageListener() {
-        // At the bottom of content.js, replace ALL message listeners with this:
-
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "SCRAPE_JOB") {
-            // Platform‑specific scraping
-            let jobText = "";
-            const host = window.location.hostname;
+            if (request.action === "SCRAPE_JOB" || request.action === "SCRAPE_LINKEDIN_JOB") {
+                let jobText = "";
+                const host = window.location.hostname;
 
-            if (host.includes("linkedin.com")) {
-            const el = document.querySelector(".description__text, .show-more-less-html__markup");
-            jobText = el?.innerText?.trim();
-            }
-            else if (host.includes("greenhouse.io")) {
-            const el = document.querySelector(".content, .section-wrapper, .description");
-            jobText = el?.innerText?.trim();
-            }
-            else if (host.includes("lever.co")) {
-            const el = document.querySelector("div.content, div.description");
-            jobText = el?.innerText?.trim();
-            }
-            else if (host.includes("myworkdayjobs.com")) {
-            const el = document.querySelector("[data-automation-id='jobPostingDescription']");
-            jobText = el?.innerText?.trim();
-            }
-
-            // Generic fallback
-            if (!jobText || jobText.length < 100) {
-            const selectors = [
-                ".job-description", ".description", ".job-desc",
-                "[id*='description']", "[class*='description']",
-                "section", "article"
-            ];
-            for (const sel of selectors) {
-                const el = document.querySelector(sel);
-                if (el && el.innerText.length > 100) {
-                jobText = el.innerText.trim();
-                break;
+                if (host.includes("linkedin.com")) {
+                    const el = document.querySelector(".description__text, .show-more-less-html__markup");
+                    jobText = el?.innerText?.trim();
                 }
-            }
+                else if (host.includes("greenhouse.io")) {
+                    const el = document.querySelector(".content, .section-wrapper, .description");
+                    jobText = el?.innerText?.trim();
+                }
+                else if (host.includes("lever.co")) {
+                    const el = document.querySelector("div.content, div.description");
+                    jobText = el?.innerText?.trim();
+                }
+                else if (host.includes("myworkdayjobs.com")) {
+                    const el = document.querySelector("[data-automation-id='jobPostingDescription']");
+                    jobText = el?.innerText?.trim();
+                }
+
+                if (!jobText || jobText.length < 100) {
+                    const selectors = [
+                        ".job-description", ".description", ".job-desc",
+                        "[id*='description']", "[class*='description']",
+                        "section", "article"
+                    ];
+                    for (const sel of selectors) {
+                        const el = document.querySelector(sel);
+                        if (el && el.innerText.length > 100) {
+                            jobText = el.innerText.trim();
+                            break;
+                        }
+                    }
+                }
+
+                sendResponse({ text: jobText || "No job description found on this site." });
+                return true;
             }
 
-            // Always send a response
-            sendResponse({ text: jobText || "No job description found on this site." });
-            return true; // keep channel open for async
-        }
+            if (request.action === "SCRAPE_LINKEDIN_PROFILE") {
+                let profileText = "";
+                try {
+                    const sections = document.querySelectorAll('section');
+                    profileText = Array.from(sections).map(el => el.innerText.trim()).join("\n\n");
+                } catch (e) {
+                    profileText = "Error extracting profile.";
+                }
+                sendResponse({ text: profileText || "No profile data found." });
+                return true;
+            }
         });
-
-    }
-
-    // --- NEW: Job Description Scraper (Platform-specific + generic fallback) ---
-    scrapeJobDescription() {
-        const host = window.location.hostname;
-        let jobText = "";
-
-        if (host.includes("greenhouse.io")) {
-            const el = document.querySelector(".content, .section-wrapper, .description");
-            jobText = el?.innerText?.trim();
-        } else if (host.includes("lever.co")) {
-            const el = document.querySelector("div.content, div.description");
-            jobText = el?.innerText?.trim();
-        } else if (host.includes("myworkdayjobs.com")) {
-            const el = document.querySelector("[data-automation-id='jobPostingDescription']");
-            jobText = el?.innerText?.trim();
-        }
-
-        // Generic fallback
-        if (!jobText || jobText.length < 100) {
-            const selectors = [
-                ".job-description", ".description", ".job-desc",
-                "[id*='description']", "[class*='description']",
-                "section", "article"
-            ];
-            for (const sel of selectors) {
-                const el = document.querySelector(sel);
-                if (el && el.innerText.length > 100) {
-                    jobText = el.innerText.trim();
-                    break;
-                }
-            }
-        }
-
-        return jobText || "No job description found on this site.";
     }
 }
 
-
-// Initialize
 const assistant = new JobAssistant();
 document.readyState === 'loading'
     ? document.addEventListener('DOMContentLoaded', () => assistant.init())
     : assistant.init();
-
