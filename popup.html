@@ -10,16 +10,16 @@
             padding: 15px;
             margin: 0;
         }
-        
+
         h2 {
             text-align: center;
             color: #333;
         }
-        
+
         .section {
             margin-bottom: 15px;
         }
-        
+
         input, textarea {
             width: 100%;
             padding: 8px;
@@ -28,12 +28,12 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
-        
+
         textarea {
             height: 60px;
             resize: vertical;
         }
-        
+
         button {
             width: 100%;
             padding: 10px;
@@ -44,11 +44,11 @@
             cursor: pointer;
             margin-top: 10px;
         }
-        
+
         button:hover {
             background: #0056b3;
         }
-        
+
         .status {
             text-align: center;
             margin: 10px 0;
@@ -56,12 +56,12 @@
             border-radius: 4px;
             font-size: 14px;
         }
-        
+
         .success {
             background: #d4edda;
             color: #155724;
         }
-        
+
         .error {
             background: #f8d7da;
             color: #721c24;
@@ -70,7 +70,7 @@
 </head>
 <body>
     <h2>Job Application Assistant</h2>
-    
+
     <div class="section">
         <h3>Personal Information</h3>
         <input type="text" id="fullName" placeholder="Full Name" required>
@@ -78,26 +78,42 @@
         <input type="tel" id="phone" placeholder="Phone Number">
         <input type="text" id="location" placeholder="City, State/Country">
     </div>
-    
+
     <div class="section">
         <h3>Professional Info</h3>
         <textarea id="summary" placeholder="Professional summary"></textarea>
         <textarea id="experience" placeholder="Key experience and achievements"></textarea>
         <input type="text" id="skills" placeholder="Skills (comma separated)">
     </div>
-    
+
     <div class="section">
         <h3>Education</h3>
         <input type="text" id="degree" placeholder="Degree">
         <input type="text" id="university" placeholder="University">
     </div>
-    
+
     <button id="saveProfile">Save Profile</button>
     <div id="status" class="status" style="display: none;"></div>
+
+    <!-- Scrape Job Listing -->
     <div class="section">
         <h3>Scrape Job Listing</h3>
         <button id="scrapeJob">Scrape Current Page</button>
         <textarea id="scrapedJobData" placeholder="Scraped job description will appear here..." readonly></textarea>
+    </div>
+
+    <!-- 👤 Scrape LinkedIn Profile -->
+    <div class="section">
+        <h3>Scrape LinkedIn Profile</h3>
+        <button id="scrapeLinkedInProfile">Scrape Profile</button>
+        <textarea id="scrapedProfileData" placeholder="Scraped LinkedIn profile info will appear here..." readonly></textarea>
+    </div>
+
+    <!-- 📁 Upload Resume -->
+    <div class="section">
+        <h3>Upload Resume</h3>
+        <input type="file" id="uploadResume" accept=".txt,.pdf,.doc,.docx">
+        <small>Text content will be extracted and shown above.</small>
     </div>
 
     <script src="popup.js"></script>
