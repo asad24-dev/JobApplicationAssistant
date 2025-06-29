@@ -1,5 +1,5 @@
 // Modified popup.js code to support scraping LinkedIn job description,
-// full LinkedIn profile info, and uploading/saving resume data
+// full LinkedIn profile info, and uploading/saving resume data with parsing support
 
 // === DOM Ready ===
 document.addEventListener('DOMContentLoaded', () => {
@@ -89,10 +89,8 @@ function handleResumeUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-        document.getElementById('scrapedProfileData').value = reader.result;
-        showStatus('Resume uploaded successfully!', 'success');
-    };
-    reader.readAsText(file);
-}
+    parseResume(file, (text) => {
+        document.getElementById('scrapedProfileData').value = text;
+        showStatus('Resume parsed and loaded successfully!', 'success');
+    });
+} 
