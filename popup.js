@@ -1,11 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const saveButton = document.getElementById('saveProfile');
-    
-    // Load existing profile data
+    const scrapeButton = document.getElementById('scrapeJob');
+
     loadProfile();
-    
-    // Save profile button
     saveButton.addEventListener('click', saveProfile);
+    scrapeButton.addEventListener('click', scrapeJob);
 });
 
 function loadProfile() {
@@ -60,4 +59,20 @@ function showStatus(message, type) {
     setTimeout(() => {
         statusElement.style.display = 'none';
     }, 3000);
+}
+
+function scrapeJob() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "SCRAPE_JOB" }, (response) => {
+            if (chrome.runtime.lastError) {
+                document.getElementById('scrapedJobData').value = 'Error: Unable to scrape this page.';
+                return;
+            }
+            if (response && response.text) {
+                document.getElementById('scrapedJobData').value = response.text;
+            } else {
+                document.getElementById('scrapedJobData').value = 'No job listing content detected.';
+            }
+        });
+    });
 }

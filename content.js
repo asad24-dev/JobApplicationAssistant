@@ -1,13 +1,13 @@
-// Basic Job Application Assistant Content Script
 class JobAssistant {
     constructor() {
         this.userProfile = null;
         this.jobKeywords = ['job', 'career', 'apply', 'application', 'resume', 'cv'];
-        this.jobPortals = ['linkedin.com', 'indeed.com', 'glassdoor.com'];
+        this.jobPortals = ['linkedin.com', 'indeed.com', 'glassdoor.com', 'greenhouse.io', 'lever.co', 'myworkdayjobs.com'];
     }
 
     init() {
         this.loadProfile();
+        this.setupMessageListener();
         if (this.isJobPortal()) {
             console.log('Job portal detected - activating assistant');
             setTimeout(() => this.fillForms(), 2000);
@@ -24,17 +24,13 @@ class JobAssistant {
         const url = window.location.href.toLowerCase();
         const domain = window.location.hostname.toLowerCase();
         const pageText = document.body.innerText.toLowerCase();
-        
-        // Check if it's a known job portal
-        if (this.jobPortals.some(portal => domain.includes(portal))) {
-            return true;
-        }
-        
-        // Check for job-related keywords
-        const keywordCount = this.jobKeywords.filter(keyword => 
-            pageText.includes(keyword) || url.includes(keyword)
+
+        if (this.jobPortals.some(portal => domain.includes(portal))) return true;
+
+        const keywordCount = this.jobKeywords.filter(k =>
+            pageText.includes(k) || url.includes(k)
         ).length;
-        
+
         return keywordCount >= 2;
     }
 
@@ -45,11 +41,7 @@ class JobAssistant {
         }
 
         const inputs = document.querySelectorAll('input, textarea');
-        
-        inputs.forEach(input => {
-            this.fillField(input);
-        });
-
+        inputs.forEach(input => this.fillField(input));
         this.addSuggestionButton();
     }
 
@@ -59,40 +51,22 @@ class JobAssistant {
         const placeholder = (input.placeholder || '').toLowerCase();
         const type = input.type || '';
 
-        // Skip if field already has value
         if (input.value) return;
 
-        // Name fields
         if (name.includes('name') || id.includes('name') || placeholder.includes('name')) {
-            if (this.userProfile.fullName) {
-                input.value = this.userProfile.fullName;
-                this.triggerChange(input);
-            }
+            if (this.userProfile.fullName) input.value = this.userProfile.fullName;
+        }
+        else if (type === 'email' || name.includes('email') || id.includes('email')) {
+            if (this.userProfile.email) input.value = this.userProfile.email;
+        }
+        else if (type === 'tel' || name.includes('phone') || id.includes('phone')) {
+            if (this.userProfile.phone) input.value = this.userProfile.phone;
+        }
+        else if (name.includes('location') || id.includes('location') || name.includes('city')) {
+            if (this.userProfile.location) input.value = this.userProfile.location;
         }
 
-        // Email fields
-        if (type === 'email' || name.includes('email') || id.includes('email')) {
-            if (this.userProfile.email) {
-                input.value = this.userProfile.email;
-                this.triggerChange(input);
-            }
-        }
-
-        // Phone fields
-        if (type === 'tel' || name.includes('phone') || id.includes('phone')) {
-            if (this.userProfile.phone) {
-                input.value = this.userProfile.phone;
-                this.triggerChange(input);
-            }
-        }
-
-        // Location fields
-        if (name.includes('location') || id.includes('location') || name.includes('city')) {
-            if (this.userProfile.location) {
-                input.value = this.userProfile.location;
-                this.triggerChange(input);
-            }
-        }
+        this.triggerChange(input);
     }
 
     triggerChange(input) {
@@ -101,7 +75,10 @@ class JobAssistant {
     }
 
     addSuggestionButton() {
+        if (document.getElementById("job-assistant-btn")) return;
+
         const button = document.createElement('button');
+        button.id = "job-assistant-btn";
         button.textContent = '🤖 AI Assistant';
         button.style.cssText = `
             position: fixed;
@@ -161,15 +138,98 @@ class JobAssistant {
         modal.appendChild(content);
         document.body.appendChild(modal);
     }
+
+    // --- NEW: Message listener for scraping job description ---
+    setupMessageListener() {
+        // At the bottom of content.js, replace ALL message listeners with this:
+
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === "SCRAPE_JOB") {
+            // Platform‑specific scraping
+            let jobText = "";
+            const host = window.location.hostname;
+
+            if (host.includes("linkedin.com")) {
+            const el = document.querySelector(".description__text, .show-more-less-html__markup");
+            jobText = el?.innerText?.trim();
+            }
+            else if (host.includes("greenhouse.io")) {
+            const el = document.querySelector(".content, .section-wrapper, .description");
+            jobText = el?.innerText?.trim();
+            }
+            else if (host.includes("lever.co")) {
+            const el = document.querySelector("div.content, div.description");
+            jobText = el?.innerText?.trim();
+            }
+            else if (host.includes("myworkdayjobs.com")) {
+            const el = document.querySelector("[data-automation-id='jobPostingDescription']");
+            jobText = el?.innerText?.trim();
+            }
+
+            // Generic fallback
+            if (!jobText || jobText.length < 100) {
+            const selectors = [
+                ".job-description", ".description", ".job-desc",
+                "[id*='description']", "[class*='description']",
+                "section", "article"
+            ];
+            for (const sel of selectors) {
+                const el = document.querySelector(sel);
+                if (el && el.innerText.length > 100) {
+                jobText = el.innerText.trim();
+                break;
+                }
+            }
+            }
+
+            // Always send a response
+            sendResponse({ text: jobText || "No job description found on this site." });
+            return true; // keep channel open for async
+        }
+        });
+
+    }
+
+    // --- NEW: Job Description Scraper (Platform-specific + generic fallback) ---
+    scrapeJobDescription() {
+        const host = window.location.hostname;
+        let jobText = "";
+
+        if (host.includes("greenhouse.io")) {
+            const el = document.querySelector(".content, .section-wrapper, .description");
+            jobText = el?.innerText?.trim();
+        } else if (host.includes("lever.co")) {
+            const el = document.querySelector("div.content, div.description");
+            jobText = el?.innerText?.trim();
+        } else if (host.includes("myworkdayjobs.com")) {
+            const el = document.querySelector("[data-automation-id='jobPostingDescription']");
+            jobText = el?.innerText?.trim();
+        }
+
+        // Generic fallback
+        if (!jobText || jobText.length < 100) {
+            const selectors = [
+                ".job-description", ".description", ".job-desc",
+                "[id*='description']", "[class*='description']",
+                "section", "article"
+            ];
+            for (const sel of selectors) {
+                const el = document.querySelector(sel);
+                if (el && el.innerText.length > 100) {
+                    jobText = el.innerText.trim();
+                    break;
+                }
+            }
+        }
+
+        return jobText || "No job description found on this site.";
+    }
 }
 
-// Initialize the assistant
+
+// Initialize
 const assistant = new JobAssistant();
+document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', () => assistant.init())
+    : assistant.init();
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        assistant.init();
-    });
-} else {
-    assistant.init();
-}
