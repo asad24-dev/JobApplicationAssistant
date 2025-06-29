@@ -1,9 +1,11 @@
-// === content.js ===
+// content.js
 class JobAssistant {
     constructor() {
         this.userProfile = null;
         this.jobKeywords = ['job', 'career', 'apply', 'application', 'resume', 'cv'];
-        this.jobPortals = ['linkedin.com', 'indeed.com', 'glassdoor.com', 'greenhouse.io', 'lever.co', 'myworkdayjobs.com'];
+        this.jobPortals = [
+            'linkedin.com', 'indeed.com', 'glassdoor.com', 'greenhouse.io', 'lever.co', 'myworkdayjobs.com'
+        ];
     }
 
     init() {
@@ -56,15 +58,14 @@ class JobAssistant {
 
         if (name.includes('name') || id.includes('name') || placeholder.includes('name')) {
             if (this.userProfile.fullName) input.value = this.userProfile.fullName;
-        }
-        else if (type === 'email' || name.includes('email') || id.includes('email')) {
+        } else if (type === 'email' || name.includes('email') || id.includes('email')) {
             if (this.userProfile.email) input.value = this.userProfile.email;
-        }
-        else if (type === 'tel' || name.includes('phone') || id.includes('phone')) {
+        } else if (type === 'tel' || name.includes('phone') || id.includes('phone')) {
             if (this.userProfile.phone) input.value = this.userProfile.phone;
-        }
-        else if (name.includes('location') || id.includes('location') || name.includes('city')) {
+        } else if (name.includes('location') || id.includes('location') || name.includes('city')) {
             if (this.userProfile.location) input.value = this.userProfile.location;
+        } else if (name.includes('linkedin') || id.includes('linkedin')) {
+            if (this.userProfile.linkedinUrl) input.value = this.userProfile.linkedinUrl;
         }
 
         this.triggerChange(input);
@@ -142,24 +143,22 @@ class JobAssistant {
 
     setupMessageListener() {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            const host = window.location.hostname;
             if (request.action === "SCRAPE_LINKEDIN_JOB") {
-                setTimeout(() => {
-                    let jobText = "";
-                    const el = document.querySelector(".jobs-description__content, .show-more-less-html__markup, .jobs-description__container");
-                    jobText = el?.innerText?.trim() || "No job description found.";
-                    sendResponse({ text: jobText });
-                }, 1500);
+                const el = document.querySelector(".description__text, .show-more-less-html__markup");
+                const jobText = el?.innerText?.trim();
+                sendResponse({ text: jobText || "Job description not found." });
                 return true;
             }
-            else if (request.action === "SCRAPE_LINKEDIN_PROFILE") {
+
+            if (request.action === "SCRAPE_LINKEDIN_PROFILE") {
                 let profileText = "";
-                const name = document.querySelector('.text-heading-xlarge')?.innerText;
-                const title = document.querySelector('.text-body-medium')?.innerText;
-                const about = document.querySelector('.pv-shared-text-with-see-more')?.innerText;
-                const experience = document.querySelector('#experience ~ div')?.innerText;
-                profileText = `Name: ${name}\nTitle: ${title}\nAbout: ${about}\nExperience: ${experience}`;
-                sendResponse({ text: profileText });
+                const sections = document.querySelectorAll('section');
+                sections.forEach(section => {
+                    if (section.innerText && section.innerText.length > 200) {
+                        profileText += section.innerText + '\n\n';
+                    }
+                });
+                sendResponse({ text: profileText.trim() || "LinkedIn profile content not found." });
                 return true;
             }
         });
