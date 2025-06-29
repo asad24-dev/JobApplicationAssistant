@@ -1,119 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Job Application Assistant</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            width: 350px;
-            padding: 15px;
-            margin: 0;
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-        }
-
-        .section {
-            margin-bottom: 15px;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            height: 60px;
-            resize: vertical;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background: #0056b3;
-        }
-
-        .status {
-            text-align: center;
-            margin: 10px 0;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-    </style>
+    <title>Profile Manager</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Job Application Assistant</h2>
+    <div class="container">
+        <header>
+            <h1>Profile & Job Manager</h1>
+            <div id="status" class="status" style="display:none;"></div>
+        </header>
 
-    <div class="section">
-        <h3>Personal Information</h3>
-        <input type="text" id="fullName" placeholder="Full Name" required>
-        <input type="email" id="email" placeholder="Email Address" required>
-        <input type="tel" id="phone" placeholder="Phone Number">
-        <input type="text" id="location" placeholder="City, State/Country">
-        <input type="text" id="linkedinUrl" placeholder="LinkedIn Profile URL">
+        <main>
+            <div class="actions">
+                <button id="scrapeJob">Scrape Job</button>
+                <button id="scrapeLinkedInProfile">Scrape Profile</button>
+                <label for="uploadResume" class="button-label">
+                    Upload Resume
+                    <input type="file" id="uploadResume" accept=".txt,.json" hidden>
+                </label>
+            </div>
+
+            <form id="profileForm">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" placeholder="e.g., Jane Doe">
+
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="e.g., jane.doe@example.com">
+
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" placeholder="e.g., (555) 123-4567">
+                
+                <label for="location">Location</label>
+                <input type="text" id="location" placeholder="e.g., San Francisco, CA">
+                
+                <label for="linkedinUrl">LinkedIn URL</label>
+                <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/janedoe">
+
+                <label for="summary">Summary / About</label>
+                <textarea id="summary" rows="4" placeholder="Professional summary..."></textarea>
+
+                <label for="experience">Work Experience</label>
+                <textarea id="experience" rows="6" placeholder="List of previous roles..."></textarea>
+                
+                <label for="education">Education</label>
+                <textarea id="education" rows="4" placeholder="Degrees and universities..."></textarea>
+
+                <label for="skills">Skills</label>
+                <textarea id="skills" rows="3" placeholder="JavaScript, Python, Project Management..."></textarea>
+
+                <hr>
+
+                <h3>Scraped Data (Raw)</h3>
+                <label for="scrapedJobData">Scraped Job Description</label>
+                <textarea id="scrapedJobData" rows="5" readonly></textarea>
+                
+                <label for="scrapedProfileData">Scraped Profile Data / Resume</label>
+                <textarea id="scrapedProfileData" rows="5" readonly></textarea>
+
+                <button type="button" id="saveProfile" class="save-button">Save All Data</button>
+            </form>
+        </main>
     </div>
-
-    <div class="section">
-        <h3>Professional Info</h3>
-        <textarea id="summary" placeholder="Professional summary"></textarea>
-        <textarea id="experience" placeholder="Key experience and achievements"></textarea>
-        <input type="text" id="skills" placeholder="Skills (comma separated)">
-    </div>
-
-    <div class="section">
-        <h3>Education</h3>
-        <input type="text" id="degree" placeholder="Degree">
-        <input type="text" id="university" placeholder="University">
-    </div>
-
-    <button id="saveProfile">Save Profile</button>
-    <div id="status" class="status" style="display: none;"></div>
-
-    <div class="section">
-        <h3>Scrape Job Listing</h3>
-        <button id="scrapeJob">Scrape Current Page</button>
-        <textarea id="scrapedJobData" placeholder="Scraped job description will appear here..." readonly></textarea>
-    </div>
-
-    <div class="section">
-        <h3>Scrape LinkedIn Profile</h3>
-        <button id="scrapeLinkedInProfile">Scrape Profile</button>
-        <textarea id="scrapedProfileData" placeholder="Scraped LinkedIn profile info or resume content will appear here..." readonly></textarea>
-    </div>
-
-    <div class="section">
-        <h3>Upload Resume</h3>
-        <input type="file" id="uploadResume" accept=".txt,.pdf,.doc,.docx">
-        <small>Text content will be extracted and shown above.</small>
-    </div>
-
     <script src="popup.js"></script>
 </body>
 </html>
