@@ -163,8 +163,8 @@ if (window.jobAssistantLoaded) {
                     const nextLine = educationLines[i + 1].trim();
 
                     if (
-                    line.match(/university|college|school|ucl/i) &&
-                    nextLine.match(/bachelor|msc|meng|a levels|degree/i)
+                    line.match(/university|college|school|/i) &&
+                    nextLine.match(/bachelor|bachelors|masters|msc|meng|a levels|degree/i)
                     ) {
                     firstUni = line;
                     firstDegree = nextLine;
