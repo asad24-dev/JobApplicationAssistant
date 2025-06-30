@@ -4,106 +4,344 @@
     <meta charset="UTF-8">
     <title>Job Application Assistant</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            width: 350px;
-            padding: 15px;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        h2 {
-            text-align: center;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 380px;
+            min-height: 600px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
         }
 
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .logo svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .content {
+            padding: 20px;
+            background: white;
+            min-height: 500px;
+        }
+
         .section {
+            margin-bottom: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section h3 {
+            color: #495057;
+            font-size: 14px;
+            font-weight: 600;
             margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section h3::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+            font-weight: 500;
         }
 
         input, textarea {
             width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
+            padding: 10px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         textarea {
-            height: 60px;
+            height: 80px;
             resize: vertical;
+            font-family: inherit;
         }
 
-        button {
+        .btn {
             width: 100%;
-            padding: 10px;
-            background: #007BFF;
-            color: white;
+            padding: 12px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s ease;
             margin-top: 10px;
         }
 
-        button:hover {
-            background: #0056b3;
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
         }
 
         .status {
             text-align: center;
-            margin: 10px 0;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 14px;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            display: none;
         }
 
         .success {
             background: #d4edda;
             color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
         .error {
             background: #f8d7da;
             color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .scraped-data {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: #495057;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 8px 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
     </style>
 </head>
 <body>
-    
-    <h2>Job Application Assistant</h2>
-    <div class="section">
-        <button id="scrapeLinkedIn">Scrape LinkedIn Profile</button>
+    <div class="header">
+        <div class="logo">
+            <svg viewBox="0 0 24 24">
+                <path d="M20,6h-2.18c0.11-0.31,0.18-0.65,0.18-1a2.996,2.996,0,0,0-5.5-1.65l-0.5,0.67-0.5-0.68C10.96,2.54,10.05,2,9,2A2.996,2.996,0,0,0,6,5c0,0.35,0.07,0.69,0.18,1H4c-1.11,0-1.99,0.89-1.99,2L2,19c0,1.11,0.89,2,2,2h16c1.11,0,2-0.89,2-2V8C22,6.89,21.11,6,20,6zM15,4c0.55,0,1,0.45,1,1s-0.45,1-1,1-1-0.45-1-1S14.45,4,15,4zM9,4c0.55,0,1,0.45,1,1s-0.45,1-1,1S8,5.55,8,5S8.45,4,9,4zM20,19H4V8h16V19z"/>
+                <path d="M12,9c-1.66,0-3,1.34-3,3s1.34,3,3,3s3-1.34,3-3S13.66,9,12,9z M12,13c-0.55,0-1-0.45-1-1s0.45-1,1-1s1,0.45,1,1S12.55,13,12,13z"/>
+            </svg>
+        </div>
+        <h2>Job Application Assistant</h2>
+        <div class="subtitle">AI-powered job application helper</div>
     </div>
-    <div class="section">
-        <h3>Personal Information</h3>
-        <input type="text" id="fullName" placeholder="Full Name" required>
-        <input type="email" id="email" placeholder="Email Address" required>
-        <input type="tel" id="phone" placeholder="Phone Number">
-        <input type="text" id="location" placeholder="City, State/Country">
-    </div>
-    
-    <div class="section">
-        <h3>Professional Info</h3>
-        <textarea id="summary" placeholder="Professional summary"></textarea>
-        <textarea id="projects" placeholder="projects"></textarea>
-        <textarea id="experience" placeholder="Key experience and achievements"></textarea>
-        <input type="text" id="skills" placeholder="Skills (comma separated)">
-    </div>
-    
-    <div class="section">
-        <h3>Education</h3>
-        <input type="text" id="degree" placeholder="Degree">
-        <input type="text" id="university" placeholder="University">
-    </div>
-    
-    <button id="saveProfile">Save Profile</button>
-    <div id="status" class="status" style="display: none;"></div>
-    
-    
-    <div class="section">
-        <h3>Scrape Job Listing</h3>
-        <button id="scrapeJob">Scrape Current Page</button>
-        <textarea id="scrapedJobData" placeholder="Scraped job description will appear here..." readonly></textarea>
+
+    <div class="content">
+        <div class="tabs">
+            <div class="tab active" data-tab="profile">Profile</div>
+            <div class="tab" data-tab="scrape">Scrape</div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div class="tab-content active" id="profile-tab">
+            <div class="section">
+                <h3>Personal Information</h3>
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" placeholder="Enter your phone number">
+                </div>
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" placeholder="City, State/Country">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>Professional Information</h3>
+                <div class="form-group">
+                    <label for="summary">Professional Summary</label>
+                    <textarea id="summary" placeholder="Brief professional summary..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="projects">Key Projects</label>
+                    <textarea id="projects" placeholder="Describe your key projects..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="experience">Experience & Achievements</label>
+                    <textarea id="experience" placeholder="Highlight your experience and achievements..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="skills">Skills</label>
+                    <input type="text" id="skills" placeholder="Skills (comma separated)">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>Education</h3>
+                <div class="form-group">
+                    <label for="degree">Degree</label>
+                    <input type="text" id="degree" placeholder="Your degree">
+                </div>
+                <div class="form-group">
+                    <label for="university">University</label>
+                    <input type="text" id="university" placeholder="University name">
+                </div>
+            </div>
+            
+            <!-- LinkedIn Profile Import -->
+            <div class="section">
+                <h3>Import from LinkedIn</h3>
+                <div class="form-group">
+                    <label for="linkedinUrl">LinkedIn Profile URL</label>
+                    <input type="url" id="linkedinUrl" placeholder="https://www.linkedin.com/in/username">
+                </div>
+                <button class="btn btn-primary" id="scrapeLinkedIn">
+                    🔗 Import LinkedIn Profile
+                </button>
+            </div>
+            
+            <button class="btn btn-success" id="saveProfile">
+                💾 Save Profile
+            </button>
+        </div>
+
+        <!-- Scrape Tab -->
+        <div class="tab-content" id="scrape-tab">
+            <div class="section">
+                <h3>Job Listing Scraper</h3>
+                <div class="form-group">
+                    <label for="jobUrl">Job Listing URL (Optional)</label>
+                    <input type="url" id="jobUrl" placeholder="https://www.linkedin.com/jobs/view/... or leave empty for current page">
+                </div>
+                <button class="btn btn-secondary" id="scrapeJob">
+                    📋 Scrape Job Listing
+                </button>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Scraped Job Data</label>
+                    <div class="scraped-data" id="scrapedJobData">
+                        Scraped job description will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="status" class="status"></div>
     </div>
 
     <script src="popup.js"></script>

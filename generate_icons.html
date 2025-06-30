@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>Job Application Assistant Icon Generator</h1>
+    <p>Right-click on each icon below and "Save image as" to download the PNG files:</p>
+    
+    <div style="margin: 20px;">
+        <h3>16x16 Icon</h3>
+        <canvas id="canvas16" width="16" height="16"></canvas>
+    </div>
+    
+    <div style="margin: 20px;">
+        <h3>32x32 Icon</h3>
+        <canvas id="canvas32" width="32" height="32"></canvas>
+    </div>
+    
+    <div style="margin: 20px;">
+        <h3>48x48 Icon</h3>
+        <canvas id="canvas48" width="48" height="48"></canvas>
+    </div>
+    
+    <div style="margin: 20px;">
+        <h3>128x128 Icon</h3>
+        <canvas id="canvas128" width="128" height="128"></canvas>
+    </div>
+
+    <script>
+        const svgString = `<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#bg)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Briefcase -->
+  <rect x="32" y="48" width="64" height="40" rx="4" fill="#ffffff" opacity="0.9"/>
+  <rect x="28" y="44" width="72" height="8" rx="4" fill="#ffffff" opacity="0.9"/>
+  
+  <!-- Documents -->
+  <rect x="40" y="56" width="16" height="20" rx="2" fill="#667eea" opacity="0.8"/>
+  <rect x="44" y="60" width="8" height="1" fill="#ffffff"/>
+  <rect x="44" y="63" width="8" height="1" fill="#ffffff"/>
+  <rect x="44" y="66" width="6" height="1" fill="#ffffff"/>
+  
+  <rect x="60" y="56" width="16" height="20" rx="2" fill="#764ba2" opacity="0.8"/>
+  <rect x="64" y="60" width="8" height="1" fill="#ffffff"/>
+  <rect x="64" y="63" width="8" height="1" fill="#ffffff"/>
+  <rect x="64" y="66" width="6" height="1" fill="#ffffff"/>
+  
+  <rect x="80" y="56" width="16" height="20" rx="2" fill="#667eea" opacity="0.8"/>
+  <rect x="84" y="60" width="8" height="1" fill="#ffffff"/>
+  <rect x="84" y="63" width="8" height="1" fill="#ffffff"/>
+  <rect x="84" y="66" width="6" height="1" fill="#ffffff"/>
+  
+  <!-- AI/Assistant symbol -->
+  <circle cx="64" cy="88" r="8" fill="#ffffff" opacity="0.9"/>
+  <path d="M60 88 L68 88 M64 84 L64 92" stroke="#667eea" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Highlight overlay -->
+  <circle cx="64" cy="64" r="60" fill="url(#highlight)"/>
+</svg>`;
+
+        function generateIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Create an image from the SVG
+            const img = new Image();
+            const svgBlob = new Blob([svgString], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, size, size);
+                URL.revokeObjectURL(url);
+            };
+            
+            img.src = url;
+        }
+
+        // Generate all icon sizes
+        generateIcon('canvas16', 16);
+        generateIcon('canvas32', 32);
+        generateIcon('canvas48', 48);
+        generateIcon('canvas128', 128);
+    </script>
+</body>
+</html> 
