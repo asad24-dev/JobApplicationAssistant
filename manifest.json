@@ -5,7 +5,9 @@
     "description": "AI-powered assistant that helps fill job applications with your profile data.",
     "permissions": [
       "storage",
-      "activeTab"
+      "activeTab",
+      "scripting",
+      "tabs"
     ],
     "host_permissions": [
       "*://*.linkedin.com/*",
@@ -15,6 +17,9 @@
     ],
     "action": {
       "default_popup": "popup.html"
+    },
+    "background": {
+      "service_worker": "background.js"
     },
     "content_scripts": [
       {
