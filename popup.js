@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveJobButton = document.getElementById('saveJob');
     const scrapeButton = document.getElementById('scrapeJob');
     const scrapeLinkedInButton = document.getElementById('scrapeLinkedIn');
+    const scrapeQuestionsButton = document.getElementById('scrapeQuestions');
+    const saveQuestionsButton = document.getElementById('saveQuestions');
     const parseResumeButton = document.getElementById('parseResume');
     const resumeFileInput = document.getElementById('resumePdf');
 
@@ -63,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     saveJobButton.addEventListener('click', saveJob);
     scrapeButton.addEventListener('click', scrapeJob);
     scrapeLinkedInButton.addEventListener('click', scrapeLinkedInProfile);
+    scrapeQuestionsButton.addEventListener('click', scrapeQuestions);
+    saveQuestionsButton.addEventListener('click', saveQuestions);
     parseResumeButton.addEventListener('click', parseResume);
 
     // Add test button event listener
@@ -70,9 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
     testPdfJsButton.addEventListener('click', testPdfJsLibrary);
 
     // Add manual text parsing button event listener
-    const parseManualTextButton = document.getElementById('parseManualText');
-    parseManualTextButton.addEventListener('click', parseManualText);
-
     // Listen for messages from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === "PROFILE_UPDATED") {
@@ -381,4 +382,99 @@ async function testPdfJsLibrary() {
         showStatus('PDF parser test failed!', 'error');
     }
 }
+
+// Questions scraping functionality
+function scrapeQuestions() {
+    let questionsUrl = document.getElementById('questionsUrl').value.trim();
+    
+    if (questionsUrl) {
+        // Prepend https:// if missing
+        if (!questionsUrl.startsWith('http://') && !questionsUrl.startsWith('https://')) {
+            questionsUrl = 'https://' + questionsUrl;
+        }
+        
+        showStatus('Scraping application questions...', 'success');
+        
+        // Create a new tab with the questions URL
+        chrome.tabs.create({ url: questionsUrl, active: false }, (tab) => {
+            // Wait for the page to load, then scrape
+            chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo, tab) {
+                if (tabId === tab.id && changeInfo.status === 'complete') {
+                    // Remove the listener to avoid multiple calls
+                    chrome.tabs.onUpdated.removeListener(listener);
+                    
+                    // Give the page a moment to fully render
+                    setTimeout(() => {
+                        chrome.tabs.sendMessage(tab.id, { action: "SCRAPE_QUESTIONS" }, (response) => {
+                            if (chrome.runtime.lastError) {
+                                document.getElementById('scrapedQuestionsData').textContent = 'Error: Unable to scrape questions from this page.';
+                                showStatus('Error: Unable to scrape application questions.', 'error');
+                                chrome.tabs.remove(tab.id);
+                                return;
+                            }
+                            if (response && response.questions) {
+                                document.getElementById('scrapedQuestionsData').textContent = response.questions;
+                                showStatus('Application questions scraped successfully!', 'success');
+                            } else {
+                                document.getElementById('scrapedQuestionsData').textContent = 'No application questions detected.';
+                                showStatus('No questions found on this page.', 'error');
+                            }
+                            
+                            // Close the tab after scraping
+                            chrome.tabs.remove(tab.id);
+                        });
+                    }, 2000); // Wait 2 seconds for the page to fully load
+                }
+            });
+        });
+    } else {
+        // Scrape current page
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.tabs.sendMessage(tabs[0].id, { action: "SCRAPE_QUESTIONS" }, (response) => {
+                if (chrome.runtime.lastError) {
+                    document.getElementById('scrapedQuestionsData').textContent = 'Error: Unable to scrape questions from this page.';
+                    showStatus('Error: Unable to scrape current page.', 'error');
+                    return;
+                }
+                if (response && response.questions) {
+                    document.getElementById('scrapedQuestionsData').textContent = response.questions;
+                    showStatus('Application questions scraped successfully!', 'success');
+                } else {
+                    document.getElementById('scrapedQuestionsData').textContent = 'No application questions detected on current page.';
+                    showStatus('No questions found on current page.', 'error');
+                }
+            });
+        });
+    }
+}
+
+function saveQuestions() {
+    const questions = document.getElementById('scrapedQuestionsData').textContent.trim();
+    
+    if (!questions || questions === 'Scraped application questions will appear here...') {
+        showStatus('No questions to save. Please scrape questions first.', 'error');
+        return;
+    }
+    
+    // Save the questions to storage
+    chrome.storage.local.set({ scrapedQuestions: questions }, () => {
+        console.log('Questions saved:', questions);
+        showStatus('Application questions saved successfully!', 'success');
+    });
+}
+
+
+
+function loadQuestions() {
+    chrome.storage.local.get(['scrapedQuestions'], (result) => {
+        console.log('Loading questions from storage:', result.scrapedQuestions);
+        if (result.scrapedQuestions) {
+            const questionsData = document.getElementById('scrapedQuestionsData');
+            questionsData.textContent = result.scrapedQuestions;
+        }
+    });
+}
+
+
+
 
