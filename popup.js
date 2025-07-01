@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadProfile();
     saveButton.addEventListener('click', saveProfile);
-    saveJob.addEventListener('click', saveJob);
+    saveJobButton.addEventListener('click', saveJob);
     scrapeButton.addEventListener('click', scrapeJob);
     scrapeLinkedInButton.addEventListener('click', scrapeLinkedInProfile);
     parseResumeButton.addEventListener('click', parseResume);
