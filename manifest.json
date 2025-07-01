@@ -13,6 +13,8 @@
       "*://*.linkedin.com/*",
       "*://*.indeed.com/*",
       "*://*.glassdoor.com/*",
+      "*://cdnjs.cloudflare.com/*",
+      "*://unpkg.com/*",
       "<all_urls>"
     ],
     "action": {
@@ -36,6 +38,15 @@
           "styles.css"
         ],
         "run_at": "document_end"
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "pdf.min.js",
+          "pdf.worker.min.js"
+        ],
+        "matches": ["<all_urls>"]
       }
     ]
   }

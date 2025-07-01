@@ -1,7 +1,21 @@
+// Debug: Check if PDFParser is loaded
+window.addEventListener('load', () => {
+    console.log('Window loaded. PDFParser available:', typeof PDFParser !== 'undefined');
+    if (typeof PDFParser === 'undefined') {
+        console.error('PDFParser class is not available. Check if pdf-parser.js is loaded correctly.');
+    }
+});
+
+// PDF parser will be initialized when needed
+let pdfParser = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     const saveButton = document.getElementById('saveProfile');
+    const saveJobButton = document.getElementById('saveJob');
     const scrapeButton = document.getElementById('scrapeJob');
     const scrapeLinkedInButton = document.getElementById('scrapeLinkedIn');
+    const parseResumeButton = document.getElementById('parseResume');
+    const resumeFileInput = document.getElementById('resumePdf');
 
     // Tab functionality
     const tabs = document.querySelectorAll('.tab');
@@ -21,10 +35,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // File input change handler
+    resumeFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const parseButton = document.getElementById('parseResume');
+        const parseStatus = document.getElementById('parseStatus');
+        
+        if (file) {
+            if (file.type !== 'application/pdf') {
+                parseStatus.textContent = 'Please select a PDF file.';
+                parseStatus.style.color = '#dc3545';
+                parseButton.disabled = true;
+                return;
+            }
+            
+            parseStatus.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            parseStatus.style.color = '#28a745';
+            parseButton.disabled = false;
+        } else {
+            parseStatus.textContent = '';
+            parseButton.disabled = true;
+        }
+    });
+
     loadProfile();
     saveButton.addEventListener('click', saveProfile);
+    saveJob.addEventListener('click', saveJob);
     scrapeButton.addEventListener('click', scrapeJob);
     scrapeLinkedInButton.addEventListener('click', scrapeLinkedInProfile);
+    parseResumeButton.addEventListener('click', parseResume);
+
+    // Add test button event listener
+    const testPdfJsButton = document.getElementById('testPdfJs');
+    testPdfJsButton.addEventListener('click', testPdfJsLibrary);
+
+    // Add manual text parsing button event listener
+    const parseManualTextButton = document.getElementById('parseManualText');
+    parseManualTextButton.addEventListener('click', parseManualText);
 
     // Listen for messages from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -57,7 +104,20 @@ function loadProfile() {
         }
     });
 }
-
+function saveJob() {
+    const jobDescription = document.getElementById('scrapedJobData').textContent.trim();
+    
+    if (!jobDescription) {
+        showStatus('No job description to save. Please scrape a job first.', 'error');
+        return;
+    }
+    
+    // Save the job description to storage
+    chrome.storage.local.set({ scrapedJob: jobDescription }, () => {
+        console.log('Job description saved:', jobDescription);
+        showStatus('Job description saved successfully!', 'success');
+    });
+}
 function saveProfile() {
     const profile = {
         fullName: document.getElementById('fullName').value,
@@ -136,6 +196,7 @@ function scrapeLinkedInProfile() {
                             document.getElementById('degree').value = response.profile.degree || '';
                             document.getElementById('university').value = response.profile.university || '';
                             
+
                             showStatus('LinkedIn profile scraped successfully!', 'success');
                             
                             // Save the scraped profile to storage
@@ -171,6 +232,92 @@ function scrapeLinkedInProfile() {
     });
 }
 
+async function parseResume() {
+    const fileInput = document.getElementById('resumePdf');
+    const parseStatus = document.getElementById('parseStatus');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showStatus('Please select a PDF file first.', 'error');
+        return;
+    }
+    
+    try {
+        parseStatus.textContent = 'Initializing PDF parser...';
+        parseStatus.style.color = '#007bff';
+        showStatus('Initializing PDF parser...', 'success');
+        
+        // Initialize PDF parser with PDF.js
+        if (!pdfParser) {
+            pdfParser = new PDFParser();
+        }
+        
+        await pdfParser.init(); // Explicitly initialize
+        
+        parseStatus.textContent = 'Parsing PDF... This may take a moment.';
+        showStatus('Extracting text from PDF...', 'success');
+        
+        // Extract text from PDF
+        const extractedText = await pdfParser.extractTextFromPDF(file);
+        console.log('Extracted text length:', extractedText.length);
+        
+        if (!extractedText || extractedText.trim().length === 0) {
+            throw new Error('No text could be extracted from the PDF. Make sure the PDF contains selectable text (not scanned images).');
+        }
+        
+        parseStatus.textContent = 'Analyzing resume content...';
+        showStatus('Analyzing resume content...', 'success');
+        
+        // Parse profile data from extracted text
+        const parsedProfile = pdfParser.parseProfileFromText(extractedText);
+        
+        // Populate form fields with parsed data
+        if (parsedProfile.fullName) document.getElementById('fullName').value = parsedProfile.fullName;
+        if (parsedProfile.email) document.getElementById('email').value = parsedProfile.email;
+        if (parsedProfile.phone) document.getElementById('phone').value = parsedProfile.phone;
+        if (parsedProfile.location) document.getElementById('location').value = parsedProfile.location;
+        if (parsedProfile.summary) document.getElementById('summary').value = parsedProfile.summary;
+        if (parsedProfile.projects) document.getElementById('projects').value = parsedProfile.projects;
+        if (parsedProfile.experience) document.getElementById('experience').value = parsedProfile.experience;
+        if (parsedProfile.skills) document.getElementById('skills').value = parsedProfile.skills;
+        if (parsedProfile.degree) document.getElementById('degree').value = parsedProfile.degree;
+        if (parsedProfile.university) document.getElementById('university').value = parsedProfile.university;
+        
+        // Save parsed profile to storage
+        const profileToSave = {
+            fullName: parsedProfile.fullName || '',
+            email: parsedProfile.email || '',
+            phone: parsedProfile.phone || '',
+            location: parsedProfile.location || '',
+            summary: parsedProfile.summary || '',
+            projects: parsedProfile.projects || '',
+            experience: parsedProfile.experience || '',
+            skills: parsedProfile.skills || '',
+            degree: parsedProfile.degree || '',
+            university: parsedProfile.university || '',
+            lastUpdated: new Date().toISOString()
+        };
+        
+        chrome.storage.local.set({ userProfile: profileToSave }, () => {
+            console.log('Parsed profile saved to storage:', profileToSave);
+        });
+        
+        parseStatus.textContent = 'Resume parsed successfully!';
+        parseStatus.style.color = '#28a745';
+        showStatus('Resume parsed and profile updated successfully!', 'success');
+        
+        // Clear file input
+        fileInput.value = '';
+        document.getElementById('parseResume').disabled = true;
+        
+    } catch (error) {
+        console.error('Error parsing resume:', error);
+        parseStatus.textContent = 'Error parsing resume: ' + error.message;
+        parseStatus.style.color = '#dc3545';
+        showStatus('Error parsing resume: ' + error.message, 'error');
+    }
+}
+
 function showStatus(message, type) {
     const statusElement = document.getElementById('status');
     statusElement.textContent = message;
@@ -182,58 +329,17 @@ function showStatus(message, type) {
     }, 3000);
 }
 
-function scrapeJob() {
-    let jobUrl = document.getElementById('jobUrl').value.trim();
-    
-    if (jobUrl) {
-        // Prepend https:// if missing
-        if (!jobUrl.startsWith('http://') && !jobUrl.startsWith('https://')) {
-            jobUrl = 'https://' + jobUrl;
-        }
-        // Scrape from provided URL
-        if (!jobUrl.includes('linkedin.com') && !jobUrl.includes('indeed.com') && !jobUrl.includes('glassdoor.com')) {
-            showStatus('Please enter a valid job listing URL from LinkedIn, Indeed, or Glassdoor.', 'error');
-            return;
-        }
-        
-        showStatus('Scraping job listing...', 'success');
-        
-        // Create a new tab with the job URL
-        chrome.tabs.create({ url: jobUrl, active: false }, (tab) => {
-            // Wait for the page to load, then scrape
-            chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo, tab) {
-                if (tabId === tab.id && changeInfo.status === 'complete') {
-                    // Remove the listener to avoid multiple calls
-                    chrome.tabs.onUpdated.removeListener(listener);
-                    
-                    // Give the page a moment to fully render
-                    setTimeout(() => {
-                        chrome.tabs.sendMessage(tab.id, { action: "SCRAPE_JOB" }, (response) => {
-                            if (chrome.runtime.lastError) {
-                                document.getElementById('scrapedJobData').textContent = 'Error: Unable to scrape this page.';
-                                showStatus('Error: Unable to scrape job listing.', 'error');
-                                chrome.tabs.remove(tab.id);
-                                return;
-                            }
-                            if (response && response.text) {
-                                document.getElementById('scrapedJobData').textContent = response.text;
-                                showStatus('Job listing scraped successfully!', 'success');
-                            } else {
-                                document.getElementById('scrapedJobData').textContent = 'No job listing content detected.';
-                                showStatus('No job content found on this page.', 'error');
-                            }
-                            
-                            // Close the tab after scraping
-                            chrome.tabs.remove(tab.id);
-                        });
-                    }, 2000); // Wait 2 seconds for the page to fully load
-                }
-            });
-        });
-    } else {
-        // Scrape current page
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, { action: "SCRAPE_JOB" }, (response) => {
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tab = tabs[0];
+
+    chrome.scripting.executeScript(
+        {
+            target: { tabId: tab.id },
+            files: ['content.js']
+        },
+        () => {
+            // Then send message
+            chrome.tabs.sendMessage(tab.id, { action: "SCRAPE_JOB" }, (response) => {
                 if (chrome.runtime.lastError) {
                     document.getElementById('scrapedJobData').textContent = 'Error: Unable to scrape this page.';
                     showStatus('Error: Unable to scrape current page.', 'error');
@@ -247,6 +353,31 @@ function scrapeJob() {
                     showStatus('No job content found on current page.', 'error');
                 }
             });
-        });
+        }
+    );
+});
+
+
+async function testPdfJsLibrary() {
+    const parseStatus = document.getElementById('parseStatus');
+    
+    try {
+        parseStatus.textContent = 'Testing PDF parser initialization...';
+        parseStatus.style.color = '#007bff';
+        showStatus('Testing PDF parser...', 'success');
+        
+        // Test PDF.js-based parser
+        const testParser = new PDFParser();
+        await testParser.init();
+        parseStatus.textContent = 'PDF parser initialized successfully! ✅ You can now upload PDF resumes.';
+        parseStatus.style.color = '#28a745';
+        showStatus('PDF parser test successful! Upload feature ready.', 'success');
+        
+    } catch (error) {
+        console.error('PDF parser test failed:', error);
+        parseStatus.textContent = 'PDF parser test failed: ' + error.message;
+        parseStatus.style.color = '#dc3545';
+        showStatus('PDF parser test failed!', 'error');
     }
 }
+

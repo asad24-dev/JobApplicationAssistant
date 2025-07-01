@@ -259,7 +259,7 @@ if (window.jobAssistantLoaded) {
             let jobText = "";
 
             if (host.includes("linkedin.com")) {
-                const el = document.querySelector(".description__text, .show-more-less-html__markup");
+                const el = document.querySelector(".description__text, .show-more-less-html__markup, .jobs-description__container, .jobs-description__content.jobs-description-content");
                 jobText = el?.innerText?.trim();
             }
             else if (host.includes("greenhouse.io")) {

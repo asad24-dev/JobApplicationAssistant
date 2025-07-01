@@ -111,6 +111,19 @@
             background: white;
         }
 
+        input[type="file"] {
+            border: 2px dashed #667eea !important;
+            padding: 20px !important;
+            text-align: center;
+            background: #f8f9ff !important;
+            cursor: pointer;
+        }
+
+        input[type="file"]:hover {
+            border-color: #764ba2 !important;
+            background: #f0f3ff !important;
+        }
+
         input:focus, textarea:focus {
             outline: none;
             border-color: #667eea;
@@ -315,6 +328,24 @@
                     🔗 Import LinkedIn Profile
                 </button>
             </div>
+
+            <!-- PDF Resume Import -->
+            <div class="section">
+                <h3>Import from PDF Resume</h3>
+                <div class="form-group">
+                    <label for="resumePdf">Upload Resume (PDF)</label>
+                    <input type="file" id="resumePdf" accept=".pdf" style="border: 2px dashed #667eea; padding: 20px; text-align: center; background: #f8f9ff;">
+                </div>
+                <button class="btn btn-primary" id="parseResume" disabled>
+                    📄 Parse Resume (Limited)
+                </button>
+                <button class="btn btn-secondary" id="testPdfJs" style="margin-top: 5px;">
+                    🔧 Test Parser
+                </button>
+                <div id="parseStatus" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+                
+                <!-- Manual Text Input Alternative -->
+            </div>
             
             <button class="btn btn-success" id="saveProfile">
                 💾 Save Profile
@@ -338,12 +369,17 @@
                         Scraped job description will appear here...
                     </div>
                 </div>
+                <button class="btn btn-success" id="saveJob">
+                    💾 Save Job Description
+                </button>
             </div>
         </div>
 
         <div id="status" class="status"></div>
     </div>
 
+    <script src="pdf.min.js"></script>
+    <script src="pdf-parser.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>
