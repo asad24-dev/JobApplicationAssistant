@@ -17,7 +17,6 @@ if (window.jobAssistantLoaded) {
 
             if (this.isJobPortal()) {
                 console.log('Job portal detected - activating assistant');
-                this.fillForms();
             }
         },
 
@@ -60,9 +59,9 @@ if (window.jobAssistantLoaded) {
 
             if (aboutSpan && aboutSpan.innerText.trim()) {
                 profile.summary = aboutSpan.innerText.trim();
-                console.log('✅ Extracted About Summary:', profile.summary.substring(0, 500) + '...');
+                console.log('Extracted About Summary:', profile.summary.substring(0, 500) + '...');
             } else {
-                console.log('❌ Could not find the About summary text');
+                console.log('Could not find the About summary text');
             }
 
 
@@ -269,7 +268,7 @@ if (window.jobAssistantLoaded) {
                 jobText = el?.innerText?.trim();
             }
             else if (host.includes("greenhouse.io")) {
-                const el = document.querySelector(".content, .section-wrapper, .description");
+                const el = document.querySelector(".content, .section-wrapper, .description, .job__description.body");
                 jobText = el?.innerText?.trim();
             }
             else if (host.includes("lever.co")) {
