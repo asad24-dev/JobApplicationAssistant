@@ -1,22 +1,52 @@
 {
-  "manifest_version": 3,
-  "name": "LinkedIn Scraper & Auto-Filler",
-  "version": "1.0.0",
-  "description": "Scrapes LinkedIn profiles and jobs, parses resumes, and auto-fills a profile form.",
-  "permissions": [
-    "storage",
-    "activeTab"
-  ],
-  "host_permissions": [
-    "*://*.linkedin.com/*"
-  ],
-  "action": {
-    "default_popup": "popup.html"
-  },
-  "content_scripts": [
-    {
-      "matches": ["*://*.linkedin.com/*"],
-      "js": ["content.js"]
-    }
-  ]
-}
+    "manifest_version": 3,
+    "name": "Job Application Assistant",
+    "version": "1.0",
+    "description": "AI-powered assistant that helps fill job applications with your profile data.",
+    "permissions": [
+      "storage",
+      "activeTab",
+      "scripting",
+      "tabs"
+    ],
+    "host_permissions": [
+      "*://*.linkedin.com/*",
+      "*://*.indeed.com/*",
+      "*://*.glassdoor.com/*",
+      "*://cdnjs.cloudflare.com/*",
+      "*://unpkg.com/*",
+      "<all_urls>"
+    ],
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": [
+          "*://*.linkedin.com/*",
+          "*://*.indeed.com/*",
+          "*://*.glassdoor.com/*",
+          "<all_urls>"
+        ],
+        "js": [
+          "content.js"
+        ],
+        "css": [
+          "styles.css"
+        ],
+        "run_at": "document_end"
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "pdf.min.js",
+          "pdf.worker.min.js"
+        ],
+        "matches": ["<all_urls>"]
+      }
+    ]
+  }

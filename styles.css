@@ -96,5 +96,3 @@ button:hover, .button-label:hover {
     font-weight: bold;
     margin-bottom: 10px;
 }
-.status.success { background-color: #28a745; }
-.status.error { background-color: #d9534f; }
