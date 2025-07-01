@@ -95,4 +95,53 @@ button:hover, .button-label:hover {
     text-align: center;
     font-weight: bold;
     margin-bottom: 10px;
-} */
+}
+
+/* Tab navigation styles */
+/* .tabs {
+    display: flex;
+    border-bottom: 2px solid #e1e5e9;
+    margin-bottom: 20px;
+}
+
+.tab {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border: 1px solid #e1e5e9;
+    border-bottom: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    color: #666;
+    transition: all 0.3s ease;
+    border-radius: 8px 8px 0 0;
+    margin-right: 2px;
+}
+
+.tab:last-child {
+    margin-right: 0;
+}
+
+.tab:hover {
+    background-color: #e9ecef;
+    color: #333;
+}
+
+.tab.active {
+    background-color: #fff;
+    color: #0a66c2;
+    border-bottom: 2px solid #0a66c2;
+    position: relative;
+    z-index: 1;
+}
+
+.tab-content {
+    display: none;
+    padding: 0;
+}
+
+.tab-content.active {
+    display: block;
+} */ 

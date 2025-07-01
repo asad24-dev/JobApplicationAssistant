@@ -250,6 +250,12 @@ if (window.jobAssistantLoaded) {
                     return true; 
                 }
 
+                if (request.action === "SCRAPE_QUESTIONS") {
+                    let questions = this.scrapeApplicationQuestions();
+                    sendResponse({ questions: questions || "No application questions found on this site." });
+                    return true;
+                }
+
             });
         },
 
@@ -292,7 +298,283 @@ if (window.jobAssistantLoaded) {
             }
 
             return jobText || "No job description found on this site.";
-        }
+        },
+
+        // Application Questions Scraper (Platform-specific + generic fallback)
+        scrapeApplicationQuestions() {
+            const host = window.location.hostname;
+            let questionsText = "";
+
+            if (host.includes("linkedin.com")) {
+                // LinkedIn application questions
+                const questionElements = document.querySelectorAll(
+                    '.jobs-easy-apply-form-section__grouping label, ' +
+                    '.fb-form-element label, ' +
+                    '.artdeco-text-input--label, ' +
+                    '.jobs-easy-apply-form-element label'
+                );
+                
+                if (questionElements.length > 0) {
+                    const questions = Array.from(questionElements)
+                        .map(el => el.innerText.trim())
+                        .filter(text => text.length > 3 && !text.includes('*'))
+                        .filter(text => 
+                            text.toLowerCase().includes('why') ||
+                            text.toLowerCase().includes('experience') ||
+                            text.toLowerCase().includes('tell') ||
+                            text.toLowerCase().includes('describe') ||
+                            text.toLowerCase().includes('explain') ||
+                            text.toLowerCase().includes('what') ||
+                            text.toLowerCase().includes('how') ||
+                            text.toLowerCase().includes('cover letter') ||
+                            text.toLowerCase().includes('additional information')
+                        );
+                    questionsText = questions.join('\n\n');
+                }
+            }
+            else if (host.includes("greenhouse.io")) {
+                // Greenhouse application questions
+                const questionElements = document.querySelectorAll(
+                    'label, .field-label, .application-question, .question-text'
+                );
+                
+                if (questionElements.length > 0) {
+                    const questions = Array.from(questionElements)
+                        .map(el => el.innerText.trim())
+                        .filter(text => text.length > 10)
+                        .filter(text => 
+                            text.includes('?') ||
+                            text.toLowerCase().includes('why') ||
+                            text.toLowerCase().includes('tell') ||
+                            text.toLowerCase().includes('describe') ||
+                            text.toLowerCase().includes('cover letter')
+                        );
+                    questionsText = questions.join('\n\n');
+                }
+            }
+            else if (host.includes("lever.co")) {
+                // Lever application questions
+                const questionElements = document.querySelectorAll(
+                    '.application-form label, .form-field label, .question'
+                );
+                
+                if (questionElements.length > 0) {
+                    const questions = Array.from(questionElements)
+                        .map(el => el.innerText.trim())
+                        .filter(text => text.length > 10)
+                        .filter(text => 
+                            text.includes('?') ||
+                            text.toLowerCase().includes('why') ||
+                            text.toLowerCase().includes('tell') ||
+                            text.toLowerCase().includes('describe')
+                        );
+                    questionsText = questions.join('\n\n');
+                }
+            }
+            else if (host.includes("myworkdayjobs.com")) {
+                // Workday application questions
+                const questionElements = document.querySelectorAll(
+                    '[data-automation-id*="question"], .WDAY-FORM-LABEL, label'
+                );
+                
+                if (questionElements.length > 0) {
+                    const questions = Array.from(questionElements)
+                        .map(el => el.innerText.trim())
+                        .filter(text => text.length > 10)
+                        .filter(text => 
+                            text.includes('?') ||
+                            text.toLowerCase().includes('why') ||
+                            text.toLowerCase().includes('tell') ||
+                            text.toLowerCase().includes('describe') ||
+                            text.toLowerCase().includes('cover letter')
+                        );
+                    questionsText = questions.join('\n\n');
+                }
+            }
+
+            // Enhanced fallback for Google Forms, Microsoft Forms, Typeform, and other form builders
+            if (!questionsText || questionsText.length < 50) {
+                const formBuilderSelectors = [
+                    // Google Forms
+                    '.freebirdFormviewerViewNumberedItemContainer .freebirdFormviewerViewItemsItemItemTitle',
+                    '.freebirdFormviewerViewItemsItemItemTitle',
+                    '.freebirdFormviewerComponentsQuestionBaseTitle',
+                    '[data-params*="question"]',
+                    '.exportFormQuestion',
+                    '.freebirdFormviewerViewItemsTextItemTitle',
+                    
+                    // Microsoft Forms
+                    '.question-title-box .question-title',
+                    '.office-form-question-title',
+                    '[data-automation-id="questionTitle"]',
+                    '.form-question-title',
+                    '.question-title-container',
+                    '.office-form-question-body .question-title',
+                    
+                    // Typeform
+                    '.typeform-question-title',
+                    '[data-qa="question-title"]',
+                    '.question-group h1',
+                    '.question-group .question-title',
+                    
+                    // JotForm
+                    '.form-label',
+                    '.form-label-top',
+                    '.form-label-left',
+                    '.form-label-right',
+                    '.jf-label',
+                    
+                    // Formstack
+                    '.fsLabel',
+                    '.fsSection .fsLabel',
+                    
+                    // Wufoo
+                    '.field label',
+                    '.wufoo label',
+                    
+                    // Gravity Forms
+                    '.gfield_label',
+                    '.ginput_container label',
+                    
+                    // Generic form selectors (comprehensive)
+                    'form label',
+                    '.question',
+                    '.question-text',
+                    '.question-title',
+                    '.application-question',
+                    '[class*="question"]',
+                    '[id*="question"]',
+                    'textarea + label',
+                    'input[type="text"] + label',
+                    'input[type="email"] + label',
+                    '.form-group label',
+                    '.form-field label',
+                    '.field label',
+                    '.input-group label',
+                    '.form-control + label',
+                    '.form-item label',
+                    '.control-label',
+                    '.col-form-label',
+                    '.form-label',
+                    '.field-label',
+                    '.input-label',
+                    
+                    // Additional patterns for various form frameworks
+                    '.mat-form-field label', // Angular Material
+                    '.v-label', // Vuetify
+                    '.ant-form-item-label', // Ant Design
+                    '.form-floating label', // Bootstrap
+                    '.mdc-floating-label', // Material Design Components
+                    
+                    // Aria and accessibility selectors
+                    '[aria-label]',
+                    '[aria-labelledby]',
+                    'legend',
+                    'fieldset legend',
+                    
+                    // Title and heading elements that might contain questions
+                    'h1, h2, h3, h4, h5, h6',
+                    '.title',
+                    '.heading',
+                    '.section-title'
+                ];
+                
+                for (const selector of formBuilderSelectors) {
+                    try {
+                        const elements = document.querySelectorAll(selector);
+                        if (elements.length > 0) {
+                            const questions = Array.from(elements)
+                                .map(el => {
+                                    // Get text from aria-label if available, otherwise innerText
+                                    return el.getAttribute('aria-label') || el.innerText.trim();
+                                })
+                                .filter(text => text && text.length > 3)
+                                .filter(text => {
+                                    const lowerText = text.toLowerCase();
+                                    return (
+                                        // Question indicators
+                                        text.includes('?') ||
+                                        lowerText.includes('why') ||
+                                        lowerText.includes('tell') ||
+                                        lowerText.includes('describe') ||
+                                        lowerText.includes('explain') ||
+                                        lowerText.includes('what') ||
+                                        lowerText.includes('how') ||
+                                        lowerText.includes('when') ||
+                                        lowerText.includes('where') ||
+                                        lowerText.includes('which') ||
+                                        lowerText.includes('cover letter') ||
+                                        lowerText.includes('additional information') ||
+                                        lowerText.includes('experience') ||
+                                        lowerText.includes('background') ||
+                                        lowerText.includes('qualification') ||
+                                        lowerText.includes('skill') ||
+                                        lowerText.includes('interest') ||
+                                        lowerText.includes('motivation') ||
+                                        lowerText.includes('reason') ||
+                                        lowerText.includes('goal') ||
+                                        lowerText.includes('expectation') ||
+                                        lowerText.includes('salary') ||
+                                        lowerText.includes('availability') ||
+                                        lowerText.includes('start date') ||
+                                        lowerText.includes('portfolio') ||
+                                        lowerText.includes('github') ||
+                                        lowerText.includes('linkedin') ||
+                                        lowerText.includes('reference') ||
+                                        lowerText.includes('work authorization') ||
+                                        lowerText.includes('visa') ||
+                                        lowerText.includes('sponsorship') ||
+                                        lowerText.includes('remote') ||
+                                        lowerText.includes('relocation') ||
+                                        lowerText.includes('travel')
+                                    );
+                                })
+                                .filter((text, index, arr) => arr.indexOf(text) === index); // Remove duplicates
+                            
+                            if (questions.length > 0) {
+                                questionsText = questions.join('\n\n');
+                                console.log(`Found ${questions.length} questions using selector: ${selector}`);
+                                break;
+                            }
+                        }
+                    } catch (error) {
+                        console.log(`Error with selector ${selector}:`, error);
+                        continue;
+                    }
+                }
+                
+                // If still no questions found, try a more aggressive approach
+                if (!questionsText || questionsText.length < 20) {
+                    console.log('Trying aggressive question detection...');
+                    const allTextElements = document.querySelectorAll('*');
+                    const potentialQuestions = Array.from(allTextElements)
+                        .map(el => el.innerText || el.textContent || '')
+                        .filter(text => text.trim().length > 10 && text.trim().length < 500)
+                        .filter(text => {
+                            const lowerText = text.toLowerCase();
+                            return (
+                                text.includes('?') ||
+                                (lowerText.includes('why') && (lowerText.includes('you') || lowerText.includes('company'))) ||
+                                (lowerText.includes('tell') && lowerText.includes('about')) ||
+                                (lowerText.includes('describe') && lowerText.includes('your')) ||
+                                lowerText.includes('cover letter')
+                            );
+                        })
+                        .filter((text, index, arr) => arr.indexOf(text) === index)
+                        .slice(0, 10); // Limit to first 10 matches
+                    
+                    if (potentialQuestions.length > 0) {
+                        questionsText = potentialQuestions.join('\n\n');
+                        console.log(`Found ${potentialQuestions.length} questions using aggressive detection`);
+                    }
+                }
+            }
+
+            return questionsText || "No application questions found on this site.";
+        },
+
+        // Debug helper function to test question scraping on current page
+        
     };
 
     // Initialize the assistant

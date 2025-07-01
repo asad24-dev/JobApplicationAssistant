@@ -261,6 +261,7 @@
         <div class="tabs">
             <div class="tab active" data-tab="profile">Profile</div>
             <div class="tab" data-tab="scrape">Scrape</div>
+            <div class="tab" data-tab="questions">Questions</div>
         </div>
 
         <!-- Profile Tab -->
@@ -372,6 +373,30 @@
                 <button class="btn btn-success" id="saveJob">
                     💾 Save Job Description
                 </button>
+            </div>
+        </div>
+
+        <!-- Questions Tab -->
+        <div class="tab-content" id="questions-tab">
+            <div class="section">
+                <h3>Application Questions Scraper</h3>
+                <div class="form-group">
+                    <label for="questionsUrl">Application URL (Optional)</label>
+                    <input type="url" id="questionsUrl" placeholder="https://... or leave empty for current page">
+                </div>
+                <button class="btn btn-secondary" id="scrapeQuestions">
+                    ❓ Scrape Application Questions
+                </button>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Scraped Questions</label>
+                    <div class="scraped-data" id="scrapedQuestionsData">
+                        Scraped application questions will appear here...
+                    </div>
+                </div>
+                <button class="btn btn-success" id="saveQuestions">
+                    💾 Save Questions
+                </button>
+                
             </div>
         </div>
 
