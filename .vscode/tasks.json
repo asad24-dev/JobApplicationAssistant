@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Test Extension",
+			"type": "shell",
+			"command": "echo",
+			"args": [
+				"Extension files are ready for testing. Load the extension in Chrome by going to chrome://extensions/, enabling Developer mode, and clicking 'Load unpacked' to select this folder."
+			],
+			"group": "test"
+		}
+	]
+}
