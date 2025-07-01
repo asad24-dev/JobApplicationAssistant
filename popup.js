@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrapeLinkedInButton = document.getElementById('scrapeLinkedIn');
     const scrapeQuestionsButton = document.getElementById('scrapeQuestions');
     const saveQuestionsButton = document.getElementById('saveQuestions');
+    const saveAnswersButton = document.getElementById('saveAnswers');
+    const debugQuestionScrapingButton = document.getElementById('debugQuestionScraping');
     const parseResumeButton = document.getElementById('parseResume');
     const resumeFileInput = document.getElementById('resumePdf');
 
@@ -61,12 +63,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loadProfile();
+    loadJob();
+    loadQuestions();
     saveButton.addEventListener('click', saveProfile);
     saveJobButton.addEventListener('click', saveJob);
-    scrapeButton.addEventListener('click', scrapeJob);
+    
     scrapeLinkedInButton.addEventListener('click', scrapeLinkedInProfile);
     scrapeQuestionsButton.addEventListener('click', scrapeQuestions);
     saveQuestionsButton.addEventListener('click', saveQuestions);
+    saveAnswersButton.addEventListener('click', saveAnswers);
     parseResumeButton.addEventListener('click', parseResume);
 
     // Add test button event listener
@@ -74,6 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     testPdfJsButton.addEventListener('click', testPdfJsLibrary);
 
     // Add manual text parsing button event listener
+    
+
     // Listen for messages from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === "PROFILE_UPDATED") {
@@ -117,6 +124,18 @@ function saveJob() {
     chrome.storage.local.set({ scrapedJob: jobDescription }, () => {
         console.log('Job description saved:', jobDescription);
         showStatus('Job description saved successfully!', 'success');
+    });
+}
+function loadJob() {
+    chrome.storage.local.get(['scrapedJob'], (result) => {
+        console.log('Loading job description from storage:', result.scrapedJob);
+        if (result.scrapedJob) {
+            const jobData = document.getElementById('scrapedJobData');
+            jobData.textContent = result.scrapedJob;
+        } else {
+            console.log('No job description found in storage');
+            document.getElementById('scrapedJobData').textContent = 'No job description scraped yet.';
+        }
     });
 }
 function saveProfile() {
@@ -465,6 +484,8 @@ function saveQuestions() {
 
 
 
+
+
 function loadQuestions() {
     chrome.storage.local.get(['scrapedQuestions'], (result) => {
         console.log('Loading questions from storage:', result.scrapedQuestions);
@@ -474,7 +495,6 @@ function loadQuestions() {
         }
     });
 }
-
 
 
 
