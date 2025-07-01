@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrapeLinkedInButton = document.getElementById('scrapeLinkedIn');
     const scrapeQuestionsButton = document.getElementById('scrapeQuestions');
     const saveQuestionsButton = document.getElementById('saveQuestions');
-    const saveAnswersButton = document.getElementById('saveAnswers');
-    const debugQuestionScrapingButton = document.getElementById('debugQuestionScraping');
     const parseResumeButton = document.getElementById('parseResume');
     const resumeFileInput = document.getElementById('resumePdf');
 
@@ -67,11 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadQuestions();
     saveButton.addEventListener('click', saveProfile);
     saveJobButton.addEventListener('click', saveJob);
-    
+    scrapeButton.addEventListener('click', scrapeJob);
     scrapeLinkedInButton.addEventListener('click', scrapeLinkedInProfile);
     scrapeQuestionsButton.addEventListener('click', scrapeQuestions);
     saveQuestionsButton.addEventListener('click', saveQuestions);
-    saveAnswersButton.addEventListener('click', saveAnswers);
     parseResumeButton.addEventListener('click', parseResume);
 
     // Add test button event listener
@@ -348,6 +345,33 @@ function showStatus(message, type) {
         status.style.display = 'none';
         status.textContent = '';
     }, 4000);
+}
+
+function scrapeJob() {
+    showStatus('Scraping job description...', 'success');
+    
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: "SCRAPE_JOB" }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Chrome runtime error:', chrome.runtime.lastError);
+                    document.getElementById('scrapedJobData').textContent = 'Error: Unable to scrape this page. Please refresh the page and try again.';
+                    showStatus('Error: Unable to scrape current page. Try refreshing the page.', 'error');
+                    return;
+                }
+                
+                if (response && response.text) {
+                    document.getElementById('scrapedJobData').textContent = response.text;
+                    showStatus('Job description scraped successfully!', 'success');
+                } else {
+                    document.getElementById('scrapedJobData').textContent = 'No job description content detected on current page.';
+                    showStatus('No job content found on current page.', 'error');
+                }
+            });
+        } else {
+            showStatus('Error: No active tab found.', 'error');
+        }
+    });
 }
 
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
