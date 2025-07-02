@@ -10,14 +10,25 @@ window.addEventListener('load', () => {
 let pdfParser = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    const saveButton = document.getElementById('saveProfile');
-    const saveJobButton = document.getElementById('saveJob');
-    const scrapeButton = document.getElementById('scrapeJob');
-    const scrapeLinkedInButton = document.getElementById('scrapeLinkedIn');
-    const scrapeQuestionsButton = document.getElementById('scrapeQuestions');
-    const saveQuestionsButton = document.getElementById('saveQuestions');
-    const parseResumeButton = document.getElementById('parseResume');
-    const resumeFileInput = document.getElementById('resumePdf');
+    // Helper function to safely get element by ID
+    const safeGetElement = (id) => {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`Element with id '${id}' not found`);
+        }
+        return element;
+    };
+
+    const saveButton = safeGetElement('saveProfile');
+    const saveJobButton = safeGetElement('saveJob');
+    const scrapeButton = safeGetElement('scrapeJob');
+    const scrapeLinkedInButton = safeGetElement('scrapeLinkedIn');
+    const scrapeQuestionsButton = safeGetElement('scrapeQuestions');
+    const saveQuestionsButton = safeGetElement('saveQuestions');
+    const generateContentButton = safeGetElement('generateContent');
+    const copyContentButton = safeGetElement('copyContent');
+    const parseResumeButton = safeGetElement('parseResume');
+    const resumeFileInput = safeGetElement('resumePdf');
 
     // Tab functionality
     const tabs = document.querySelectorAll('.tab');
@@ -33,50 +44,63 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Add active class to clicked tab and corresponding content
             tab.classList.add('active');
-            document.getElementById(`${targetTab}-tab`).classList.add('active');
+            const targetContent = document.getElementById(`${targetTab}-tab`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
         });
     });
 
     // File input change handler
-    resumeFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        const parseButton = document.getElementById('parseResume');
-        const parseStatus = document.getElementById('parseStatus');
-        
-        if (file) {
-            if (file.type !== 'application/pdf') {
-                parseStatus.textContent = 'Please select a PDF file.';
-                parseStatus.style.color = '#dc3545';
-                parseButton.disabled = true;
-                return;
-            }
+    if (resumeFileInput) {
+        resumeFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const parseButton = safeGetElement('parseResume');
+            const parseStatus = safeGetElement('parseStatus');
             
-            parseStatus.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-            parseStatus.style.color = '#28a745';
-            parseButton.disabled = false;
-        } else {
-            parseStatus.textContent = '';
-            parseButton.disabled = true;
-        }
-    });
+            if (file) {
+                if (file.type !== 'application/pdf') {
+                    if (parseStatus) {
+                        parseStatus.textContent = 'Please select a PDF file.';
+                        parseStatus.style.color = '#dc3545';
+                    }
+                    if (parseButton) parseButton.disabled = true;
+                    return;
+                }
+                
+                if (parseStatus) {
+                    parseStatus.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    parseStatus.style.color = '#28a745';
+                }
+                if (parseButton) parseButton.disabled = false;
+            } else {
+                if (parseStatus) parseStatus.textContent = '';
+                if (parseButton) parseButton.disabled = true;
+            }
+        });
+    }
 
+    // Load initial data
     loadProfile();
     loadJob();
     loadQuestions();
-    saveButton.addEventListener('click', saveProfile);
-    saveJobButton.addEventListener('click', saveJob);
-    scrapeButton.addEventListener('click', scrapeJob);
-    scrapeLinkedInButton.addEventListener('click', scrapeLinkedInProfile);
-    scrapeQuestionsButton.addEventListener('click', scrapeQuestions);
-    saveQuestionsButton.addEventListener('click', saveQuestions);
-    parseResumeButton.addEventListener('click', parseResume);
+
+    // Add event listeners safely
+    if (saveButton) saveButton.addEventListener('click', saveProfile);
+    if (saveJobButton) saveJobButton.addEventListener('click', saveJob);
+    if (scrapeButton) scrapeButton.addEventListener('click', scrapeJob);
+    if (scrapeLinkedInButton) scrapeLinkedInButton.addEventListener('click', scrapeLinkedInProfile);
+    if (scrapeQuestionsButton) scrapeQuestionsButton.addEventListener('click', scrapeQuestions);
+    if (saveQuestionsButton) saveQuestionsButton.addEventListener('click', saveQuestions);
+    if (generateContentButton) generateContentButton.addEventListener('click', generateContent);
+    if (copyContentButton) copyContentButton.addEventListener('click', copyToClipboard);
+    if (parseResumeButton) parseResumeButton.addEventListener('click', parseResume);
 
     // Add test button event listener
-    const testPdfJsButton = document.getElementById('testPdfJs');
-    testPdfJsButton.addEventListener('click', testPdfJsLibrary);
-
-    // Add manual text parsing button event listener
-    
+    const testPdfJsButton = safeGetElement('testPdfJs');
+    if (testPdfJsButton) {
+        testPdfJsButton.addEventListener('click', testPdfJsLibrary);
+    }
 
     // Listen for messages from the content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -93,15 +117,27 @@ function loadProfile() {
         if (result.userProfile) {
             const profile = result.userProfile;
             
-            document.getElementById('fullName').value = profile.fullName || '';
-            document.getElementById('email').value = profile.email || '';
-            document.getElementById('phone').value = profile.phone || '';
-            document.getElementById('location').value = profile.location || '';
-            document.getElementById('summary').value = profile.summary || '';
-            document.getElementById('experience').value = profile.experience || '';
-            document.getElementById('skills').value = profile.skills || '';
-            document.getElementById('degree').value = profile.degree || '';
-            document.getElementById('university').value = profile.university || '';
+            // Helper function to safely set element value
+            const setElementValue = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = value || '';
+                } else {
+                    console.warn(`Element with id '${id}' not found`);
+                }
+            };
+            
+            setElementValue('fullName', profile.fullName);
+            setElementValue('email', profile.email);
+            setElementValue('phone', profile.phone);
+            setElementValue('location', profile.location);
+            setElementValue('linkedinUrl', profile.linkedinUrl);
+            setElementValue('summary', profile.summary);
+            setElementValue('projects', profile.projects);
+            setElementValue('experience', profile.experience);
+            setElementValue('skills', profile.skills);
+            setElementValue('degree', profile.degree);
+            setElementValue('university', profile.university);
             
             console.log('Form fields populated with:', profile);
         } else {
@@ -136,18 +172,29 @@ function loadJob() {
     });
 }
 function saveProfile() {
+    // Helper function to safely get element value
+    const getElementValue = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            return element.value;
+        } else {
+            console.warn(`Element with id '${id}' not found`);
+            return '';
+        }
+    };
+
     const profile = {
-        fullName: document.getElementById('fullName').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        location: document.getElementById('location').value,
-        linkedinUrl: document.getElementById('linkedinUrl')?.value || '',
-        summary: document.getElementById('summary').value,
-        experience: document.getElementById('experience').value,
-        education: document.getElementById('education').value,
-        skills: document.getElementById('skills').value,
-        scrapedJob: document.getElementById('scrapedJobData').value,
-        scrapedProfile: document.getElementById('scrapedProfileData').value,
+        fullName: getElementValue('fullName'),
+        email: getElementValue('email'),
+        phone: getElementValue('phone'),
+        location: getElementValue('location'),
+        linkedinUrl: getElementValue('linkedinUrl'),
+        summary: getElementValue('summary'),
+        projects: getElementValue('projects'),
+        experience: getElementValue('experience'),
+        degree: getElementValue('degree'),
+        university: getElementValue('university'),
+        skills: getElementValue('skills'),
         lastUpdated: new Date().toISOString()
     };
 
@@ -163,7 +210,13 @@ function saveProfile() {
 }
 
 function scrapeLinkedInProfile() {
-    let linkedinUrl = document.getElementById('linkedinUrl').value.trim();
+    const linkedinUrlElement = document.getElementById('linkedinUrl');
+    if (!linkedinUrlElement) {
+        showStatus('LinkedIn URL input field not found.', 'error');
+        return;
+    }
+    
+    let linkedinUrl = linkedinUrlElement.value.trim();
     
     if (!linkedinUrl) {
         showStatus('Please enter a LinkedIn profile URL.', 'error');
@@ -203,17 +256,25 @@ function scrapeLinkedInProfile() {
                         
                         if (response && response.profile) {
                             console.log('Profile data received:', response.profile);
-                            document.getElementById('fullName').value = response.profile.fullName || '';
-                            document.getElementById('email').value = response.profile.email || '';
-                            document.getElementById('phone').value = response.profile.phone || '';
-                            document.getElementById('location').value = response.profile.location || '';
-                            document.getElementById('summary').value = response.profile.summary || '';
-                            document.getElementById('projects').value = response.profile.projects || '';
-                            document.getElementById('experience').value = response.profile.experience || '';
-                            document.getElementById('skills').value = response.profile.skills || '';
-                            document.getElementById('degree').value = response.profile.degree || '';
-                            document.getElementById('university').value = response.profile.university || '';
                             
+                            // Helper function to safely set element value
+                            const setElementValue = (id, value) => {
+                                const element = document.getElementById(id);
+                                if (element) {
+                                    element.value = value || '';
+                                }
+                            };
+                            
+                            setElementValue('fullName', response.profile.fullName);
+                            setElementValue('email', response.profile.email);
+                            setElementValue('phone', response.profile.phone);
+                            setElementValue('location', response.profile.location);
+                            setElementValue('summary', response.profile.summary);
+                            setElementValue('projects', response.profile.projects);
+                            setElementValue('experience', response.profile.experience);
+                            setElementValue('skills', response.profile.skills);
+                            setElementValue('degree', response.profile.degree);
+                            setElementValue('university', response.profile.university);
 
                             showStatus('LinkedIn profile scraped successfully!', 'success');
                             
@@ -519,6 +580,166 @@ function loadQuestions() {
         }
     });
 }
+
+// Backend API communication
+const BACKEND_URL = 'http://127.0.0.1:8000';
+
+async function generateContent() {
+    const generateButton = document.getElementById('generateContent');
+    const generatedContentDiv = document.getElementById('generatedContent');
+    const copyButton = document.getElementById('copyContent');
+    const statsDiv = document.getElementById('generationStats');
+    
+    try {
+        // Disable button and show loading state
+        generateButton.disabled = true;
+        generateButton.textContent = '🔄 Generating...';
+        showStatus('Generating AI content...', 'success');
+        
+        // Get form data
+        const contentType = document.getElementById('contentType').value;
+        
+        // Get stored profile and job data
+        const profile = await getStoredProfile();
+        const jobDescription = await getStoredJobDescription();
+        
+        if (!profile || !profile.fullName) {
+            throw new Error('No profile data found. Please fill in your profile first.');
+        }
+        
+        if (!jobDescription || jobDescription === 'No job description scraped yet.') {
+            throw new Error('No job description found. Please scrape a job description first.');
+        }
+        
+        // For questions type, also get stored questions
+        let questions = null;
+        if (contentType === 'questions') {
+            questions = await getStoredQuestions();
+            if (!questions || questions === 'Scraped application questions will appear here...') {
+                throw new Error('No application questions found. Please scrape questions first from the Questions tab.');
+            }
+        }
+        
+        // Prepare request data
+        const requestData = {
+            user_profile: profile,
+            job_description: jobDescription,
+            content_type: contentType,
+            questions: questions || null
+        };
+        
+        console.log('Sending request to backend:', requestData);
+        
+        // Make API request
+        const response = await fetch(`${BACKEND_URL}/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Display generated content
+        generatedContentDiv.textContent = result.generated_content;
+        copyButton.style.display = 'inline-block';
+        
+        // Show stats
+        const tokenInfo = result.token_usage ? 
+            `Tokens used: ${result.token_usage.total_tokens} | ` : '';
+        statsDiv.textContent = `${tokenInfo}Processing time: ${result.processing_time}s | Generated: ${new Date().toLocaleTimeString()}`;
+        
+        const contentTypeDisplay = contentType === 'cover_letter' ? 'COVER LETTER' : 'QUESTION ANSWERS';
+        showStatus(`${contentTypeDisplay} generated successfully!`, 'success');
+        
+    } catch (error) {
+        console.error('Generation error:', error);
+        generatedContentDiv.textContent = `Error: ${error.message}`;
+        showStatus(`Generation failed: ${error.message}`, 'error');
+        copyButton.style.display = 'none';
+        statsDiv.textContent = '';
+    } finally {
+        // Re-enable button
+        generateButton.disabled = false;
+        generateButton.textContent = '🤖 Generate AI Content';
+    }
+}
+
+async function copyToClipboard() {
+    const generatedContent = document.getElementById('generatedContent').textContent;
+    
+    try {
+        await navigator.clipboard.writeText(generatedContent);
+        showStatus('Content copied to clipboard!', 'success');
+        
+        // Temporarily change button text
+        const copyButton = document.getElementById('copyContent');
+        const originalText = copyButton.textContent;
+        copyButton.textContent = '✅ Copied!';
+        setTimeout(() => {
+            copyButton.textContent = originalText;
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Copy failed:', error);
+        showStatus('Failed to copy to clipboard', 'error');
+    }
+}
+
+function getStoredProfile() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['userProfile'], (result) => {
+            resolve(result.userProfile || null);
+        });
+    });
+}
+
+function getStoredJobDescription() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['scrapedJob'], (result) => {
+            resolve(result.scrapedJob || null);
+        });
+    });
+}
+
+function getStoredQuestions() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['scrapedQuestions'], (result) => {
+            resolve(result.scrapedQuestions || null);
+        });
+    });
+}
+
+// Test backend connection
+async function testBackendConnection() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/health`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Backend connected:', data);
+            return true;
+        }
+    } catch (error) {
+        console.log('Backend not available:', error.message);
+        return false;
+    }
+    return false;
+}
+
+// Test backend on load
+window.addEventListener('load', async () => {
+    const isConnected = await testBackendConnection();
+    if (!isConnected) {
+        console.warn('Backend server not running. Make sure to start the FastAPI server.');
+    }
+});
 
 
 
