@@ -262,6 +262,7 @@
             <div class="tab active" data-tab="profile">Profile</div>
             <div class="tab" data-tab="scrape">Scrape</div>
             <div class="tab" data-tab="questions">Questions</div>
+            <div class="tab" data-tab="generate">Generate</div>
         </div>
 
         <!-- Profile Tab -->
@@ -397,6 +398,35 @@
                     💾 Save Questions
                 </button>
                 
+            </div>
+        </div>
+
+        <!-- Generate Tab -->
+        <div class="tab-content" id="generate-tab">
+            <div class="section">
+                <h3>AI Content Generation</h3>
+                <div class="form-group">
+                    <label for="contentType">Content Type</label>
+                    <select id="contentType">
+                        <option value="cover_letter">Cover Letter</option>
+                        <option value="questions">Answer Questions</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="generateContent">
+                    🤖 Generate AI Content
+                </button>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Generated Content</label>
+                    <div class="scraped-data" id="generatedContent" style="max-height: 300px; white-space: pre-wrap;">
+                        Generated content will appear here...
+                    </div>
+                </div>
+                <button class="btn btn-success" id="copyContent" style="display: none;">
+                    📋 Copy to Clipboard
+                </button>
+                <div class="form-group" style="margin-top: 10px;">
+                    <small id="generationStats" style="color: #666; font-size: 11px;"></small>
+                </div>
             </div>
         </div>
 
