@@ -2,6 +2,7 @@
 Advanced Prompt Engineering Templates for V2 Intelligent Generation
 """
 
+import re
 from typing import Dict, List, Any
 from dataclasses import dataclass
 from intelligent_selection_lite import JobAnalysis, ProfileAsset
