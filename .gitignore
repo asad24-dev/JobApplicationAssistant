@@ -3,8 +3,10 @@
 .env.local
 .env.development
 .env.production
-
+backend/.env
+backend/.env.example
 # Python
+backend/__pycache__/
 __pycache__/
 *.py[cod]
 *$py.class
