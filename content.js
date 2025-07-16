@@ -283,7 +283,7 @@ if (window.jobAssistantLoaded) {
             // Generic fallback
             if (!jobText || jobText.length < 100) {
                 const selectors = [
-                    ".job-description", ".description", ".job-desc",
+                    ".job-description", ".job-details-body", ".description", ".job-desc",
                     "[id*='description']", "[class*='description']",
                     "section", "article"
                 ];
