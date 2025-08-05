@@ -42,24 +42,30 @@ class IntelligentSelectorLite:
     def __init__(self):
         self.nlp = None
         self.tech_skills = [
-            # Programming Languages
-            "python", "javascript", "typescript", "java", "c++", "c#", "go", "rust", "php", "ruby",
-            "swift", "kotlin", "scala", "r", "matlab", "sql", "html", "css",
+            # Programming Languages (ordered by specificity)
+            "python", "javascript", "typescript", "java", "kotlin", "scala", "swift", 
+            "c++", "c#", "objective-c", "go", "rust", "php", "ruby", "r", "c",
+            "matlab", "sql", "html", "css", "xml", "json", "yaml",
             
             # Frameworks & Libraries
-            "react", "angular", "vue", "node.js", "express", "django", "flask", "spring", "laravel",
-            "tensorflow", "pytorch", "scikit-learn", "pandas", "numpy", "matplotlib", "d3.js",
+            "react", "angular", "vue.js", "vue", "node.js", "express.js", "express", 
+            "django", "flask", "fastapi", "spring boot", "spring", "laravel", "rails",
+            "tensorflow", "pytorch", "scikit-learn", "pandas", "numpy", "matplotlib", 
+            "seaborn", "plotly", "d3.js", "jquery", "bootstrap", "tailwind",
             
             # Databases
-            "mysql", "postgresql", "mongodb", "redis", "elasticsearch", "cassandra", "dynamodb",
+            "mysql", "postgresql", "mongodb", "redis", "elasticsearch", "cassandra", 
+            "dynamodb", "sqlite", "oracle", "sql server", "mariadb",
             
             # Cloud & DevOps
-            "aws", "azure", "gcp", "docker", "kubernetes", "jenkins", "github actions", "terraform",
-            "ansible", "nginx", "apache", "linux", "ubuntu", "centos",
+            "aws", "azure", "gcp", "google cloud", "docker", "kubernetes", "jenkins", 
+            "github actions", "gitlab ci", "terraform", "ansible", "nginx", "apache", 
+            "linux", "ubuntu", "centos", "debian", "windows server",
             
             # Tools & Platforms
-            "git", "github", "gitlab", "bitbucket", "jira", "confluence", "slack", "teams",
-            "visual studio", "vscode", "intellij", "eclipse", "jupyter", "postman"
+            "git", "github", "gitlab", "bitbucket", "jira", "confluence", "slack", 
+            "microsoft teams", "visual studio", "vscode", "intellij", "eclipse", 
+            "jupyter", "postman", "insomnia", "figma", "sketch", "adobe"
         ]
         
         # Business and soft skill concepts
@@ -125,9 +131,9 @@ class IntelligentSelectorLite:
         """Basic fallback analysis without spaCy."""
         text_lower = job_description.lower()
         
-        # Extract skills using simple matching
+        # Extract skills using context-aware matching
         required_skills = [skill for skill in self.tech_skills 
-                         if skill.lower() in text_lower]
+                         if self._is_skill_mentioned(skill, text_lower)]
         
         # Extract basic concepts
         key_concepts = [concept for concept in self.business_concepts 
@@ -146,12 +152,70 @@ class IntelligentSelectorLite:
         )
     
     def _extract_skills(self, text: str) -> List[str]:
-        """Extract technical skills from text."""
+        """Extract technical skills from text using word boundary detection."""
         found_skills = []
         for skill in self.tech_skills:
-            if skill.lower() in text:
+            if self._is_skill_mentioned(skill, text):
                 found_skills.append(skill)
         return list(set(found_skills))  # Remove duplicates
+    
+    def _is_skill_mentioned(self, skill: str, text: str) -> bool:
+        """Check if a skill is mentioned in context, not just as substring."""
+        skill_lower = skill.lower()
+        text_lower = text.lower()
+        
+        # Special handling for problematic single-letter and short skills
+        if skill_lower in ['r', 'c', 'go']:
+            return self._check_programming_language_context(skill_lower, text_lower)
+        
+        # For multi-word skills (e.g., "node.js", "github actions")
+        if ' ' in skill_lower or '.' in skill_lower:
+            return skill_lower in text_lower
+        
+        # For regular skills, use word boundary matching
+        pattern = r'\b' + re.escape(skill_lower) + r'\b'
+        return bool(re.search(pattern, text_lower))
+    
+    def _check_programming_language_context(self, language: str, text: str) -> bool:
+        """Check if short language names appear in programming context."""
+        language_patterns = {
+            'r': [
+                r'\br\s+(?:programming|language|script|statistical|data|analysis)',
+                r'(?:programming|language|statistical|data)\s+(?:with\s+)?r\b',
+                r'\br\s+(?:studio|packages|cran)',
+                r'(?:ggplot|dplyr|tidyverse|shiny).*r\b',
+                r'\br\b.*(?:statistical|analytics|visualization)',
+                r'(?:experience|proficient|skilled)\s+(?:in\s+)?r\b',
+                r'\br\s+(?:/|and|or)\s+python',
+                r'python\s+(?:/|and|or)\s+r\b'
+            ],
+            'c': [
+                r'\bc\s+(?:programming|language)',
+                r'(?:programming|language)\s+(?:in\s+)?c\b',
+                r'\bc\s+(?:/|and|or)\s+c\+\+',
+                r'c\+\+\s+(?:/|and|or)\s+c\b',
+                r'(?:experience|proficient|skilled)\s+(?:in\s+)?c\b',
+                r'\bc\s+(?:development|coding)',
+                r'(?:embedded|system)\s+(?:programming\s+)?(?:in\s+)?c\b'
+            ],
+            'go': [
+                r'\bgo\s+(?:programming|language|lang)',
+                r'(?:programming|language)\s+(?:in\s+)?go\b',
+                r'golang\b',
+                r'\bgo\s+(?:development|coding)',
+                r'(?:experience|proficient|skilled)\s+(?:in\s+)?go\b',
+                r'\bgo\s+(?:/|and|or)\s+(?:python|java|rust)',
+                r'(?:python|java|rust)\s+(?:/|and|or)\s+go\b',
+                r'google\s+go\b'
+            ]
+        }
+        
+        if language in language_patterns:
+            for pattern in language_patterns[language]:
+                if re.search(pattern, text):
+                    return True
+        
+        return False
     
     def _extract_key_concepts(self, doc) -> List[str]:
         """Extract key concepts using spaCy entities and noun phrases."""
@@ -337,9 +401,9 @@ class IntelligentSelectorLite:
         
         score = 0.0
         
-        # Score based on skill matches
+        # Score based on skill matches (using context-aware matching)
         for skill in job_analysis.required_skills:
-            if skill.lower() in combined_text:
+            if self._is_skill_mentioned(skill, combined_text):
                 score += 2.0  # High weight for exact skill matches
         
         # Score based on concept matches
@@ -352,16 +416,18 @@ class IntelligentSelectorLite:
         similarity_score = self.calculate_text_similarity(combined_text, job_text)
         score += similarity_score * 3.0  # Weight similarity
         
-        # Normalize score
+        # Normalize score to 0-10 scale
         max_possible_score = len(job_analysis.required_skills) * 2.0 + len(job_analysis.key_concepts) * 1.0 + 3.0
-        normalized_score = score / max_possible_score if max_possible_score > 0 else 0.0
+        if max_possible_score > 0:
+            normalized_score = (score / max_possible_score) * 10.0
+        else:
+            normalized_score = 0.0
         
-        return min(normalized_score, 1.0)  # Cap at 1.0
+        return min(normalized_score, 10.0)  # Cap at 10.0
     
     def _find_matching_skills(self, text: str, required_skills: List[str]) -> List[str]:
-        """Find which required skills match in the text."""
-        text_lower = text.lower()
-        return [skill for skill in required_skills if skill.lower() in text_lower]
+        """Find which required skills match in the text using context-aware matching."""
+        return [skill for skill in required_skills if self._is_skill_mentioned(skill, text)]
     
     def _find_matching_concepts(self, text: str, key_concepts: List[str]) -> List[str]:
         """Find which key concepts match in the text."""
