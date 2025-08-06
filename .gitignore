@@ -1,10 +1,11 @@
-# Environment variables
+# Environment variables (NEVER push these!)
 .env
 .env.local
 .env.development
 .env.production
 backend/.env
 backend/.env.example
+backend/.env.local
 # Python
 backend/__pycache__/
 __pycache__/
