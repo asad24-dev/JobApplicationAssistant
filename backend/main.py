@@ -233,11 +233,10 @@ async def generate_with_agents(application_data: ApplicationData) -> tuple[str, 
         token_usage = {
             "prompt_tokens": prompt_estimate,
             "completion_tokens": completion_tokens,
-            "total_tokens": prompt_estimate + completion_tokens,
-            "generation_method": "multi-agent"
+            "total_tokens": prompt_estimate + completion_tokens
         }
         
-        logger.info(f"V3 Agent generation successful! Output length: {len(generated_content)} characters")
+        logger.info(f"V3 Agent generation successful! Output length: {len(generated_content)} characters [MULTI-AGENT MODE]")
         return generated_content, token_usage
         
     except Exception as e:
@@ -317,7 +316,7 @@ async def generate_with_gemini(application_data: ApplicationData) -> tuple[str, 
         }
         
         # Log generation success with intelligence metrics
-        logger.info(f"V2 Generation successful! Used {len(selected_projects)} projects, {len(selected_experiences)} experiences")
+        logger.info(f"V2 Generation successful! Used {len(selected_projects)} projects, {len(selected_experiences)} experiences [INTELLIGENT PIPELINE]")
         logger.info(f"Job match score: Skills={len(job_analysis.required_skills)}, Concepts={len(job_analysis.key_concepts)}")
         
         return generated_content, token_usage
