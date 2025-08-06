@@ -75,16 +75,52 @@ class IntelligentSelectorLite:
             "analysis", "research", "documentation", "presentation", "mentoring", "coaching"
         ]
         
+        # Teaching-specific skills and concepts
+        self.teaching_skills = [
+            "curriculum development", "lesson planning", "classroom management", "assessment", 
+            "differentiated instruction", "educational technology", "student engagement",
+            "learning objectives", "pedagogy", "educational psychology", "special needs",
+            "inclusive education", "parent communication", "professional development"
+        ]
+        
+        # Job category keywords
+        self.job_categories = {
+            'teaching': ['teacher', 'instructor', 'professor', 'educator', 'tutor', 'lecturer', 
+                        'teaching', 'education', 'classroom', 'curriculum', 'student', 'school'],
+            'healthcare': ['nurse', 'doctor', 'physician', 'medical', 'clinical', 'patient', 'hospital'],
+            'technology': ['developer', 'engineer', 'programmer', 'software', 'technical', 'coding'],
+            'business': ['manager', 'analyst', 'consultant', 'sales', 'marketing', 'finance'],
+            'research': ['research', 'scientist', 'analyst', 'data', 'study', 'investigation']
+        }
+        
     def initialize(self):
         """Initialize the spaCy NLP model."""
         try:
             if self.nlp is None:
-                self.nlp = spacy.load("en_core_web_sm")
-                logger.info("spaCy English model loaded successfully")
+                # Try to load the model
+                try:
+                    self.nlp = spacy.load("en_core_web_sm")
+                    logger.info("spaCy English model loaded successfully")
+                except OSError:
+                    # Model not found, try to download it
+                    logger.warning("spaCy model not found, attempting to download...")
+                    try:
+                        import subprocess
+                        subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"], 
+                                     check=True, capture_output=True)
+                        self.nlp = spacy.load("en_core_web_sm")
+                        logger.info("spaCy English model downloaded and loaded successfully")
+                    except Exception as download_error:
+                        logger.error(f"Failed to download spaCy model: {download_error}")
+                        logger.warning("Falling back to basic analysis without spaCy")
+                        self.nlp = None
+                        return True  # Continue with fallback mode
             return True
         except Exception as e:
-            logger.error(f"Failed to load spaCy model: {e}")
-            return False
+            logger.error(f"Failed to initialize spaCy: {e}")
+            logger.warning("Using fallback analysis mode")
+            self.nlp = None
+            return True  # Always return True to continue with fallback
     
     def analyze_job_description(self, job_description: str) -> JobAnalysis:
         """
@@ -100,23 +136,34 @@ class IntelligentSelectorLite:
             # Fallback basic analysis if spaCy fails
             return self._basic_job_analysis(job_description)
         
-        doc = self.nlp(job_description)
+        # Detect job category first
+        job_category = self._detect_job_category(job_description.lower())
         
-        # Extract skills
-        required_skills = self._extract_skills(job_description.lower())
-        
-        # Extract key concepts using entities and noun phrases
-        key_concepts = self._extract_key_concepts(doc)
+        if self.nlp:
+            doc = self.nlp(job_description)
+            
+            # Extract skills based on job category
+            required_skills = self._extract_skills_by_category(job_description.lower(), job_category)
+            
+            # Extract key concepts using entities and noun phrases
+            key_concepts = self._extract_key_concepts(doc)
+            
+            # Extract company name and job title
+            company_name = self._extract_company_name(doc)
+            job_title = self._extract_job_title(job_description)
+            
+            # Extract responsibilities
+            responsibilities = self._extract_responsibilities(job_description)
+        else:
+            # Fallback without spaCy
+            required_skills = self._extract_skills_by_category(job_description.lower(), job_category)
+            key_concepts = self._extract_basic_concepts(job_description.lower(), job_category)
+            company_name = ""
+            job_title = ""
+            responsibilities = []
         
         # Extract experience requirements
         experience_years = self._extract_experience_years(job_description)
-        
-        # Extract company name and job title
-        company_name = self._extract_company_name(doc)
-        job_title = self._extract_job_title(job_description)
-        
-        # Extract responsibilities
-        responsibilities = self._extract_responsibilities(job_description)
         
         return JobAnalysis(
             required_skills=required_skills,
@@ -216,6 +263,60 @@ class IntelligentSelectorLite:
                     return True
         
         return False
+    
+    def _detect_job_category(self, job_text: str) -> str:
+        """Detect the primary job category based on keywords."""
+        category_scores = {}
+        
+        for category, keywords in self.job_categories.items():
+            score = sum(1 for keyword in keywords if keyword in job_text)
+            category_scores[category] = score
+        
+        # Return category with highest score, default to 'business'
+        if category_scores:
+            return max(category_scores.items(), key=lambda x: x[1])[0]
+        return 'business'
+    
+    def _extract_skills_by_category(self, text: str, job_category: str) -> List[str]:
+        """Extract skills relevant to the specific job category."""
+        found_skills = []
+        
+        # Always check technical skills but weight them by category
+        for skill in self.tech_skills:
+            if self._is_skill_mentioned(skill, text):
+                # For teaching jobs, de-prioritize some technical skills
+                if job_category == 'teaching' and skill in ['docker', 'kubernetes', 'aws', 'terraform']:
+                    continue
+                found_skills.append(skill)
+        
+        # Add category-specific skills
+        if job_category == 'teaching':
+            for skill in self.teaching_skills:
+                skill_variants = [skill, skill.replace(' ', ''), skill.replace(' ', '-')]
+                if any(variant in text for variant in skill_variants):
+                    found_skills.append(skill)
+        
+        # Add relevant business concepts for all categories
+        for concept in self.business_concepts:
+            if concept.lower() in text:
+                found_skills.append(concept)
+        
+        return list(set(found_skills))  # Remove duplicates
+    
+    def _extract_basic_concepts(self, text: str, job_category: str) -> List[str]:
+        """Extract concepts when spaCy is not available."""
+        concepts = []
+        
+        # Category-specific concepts
+        if job_category == 'teaching':
+            teaching_concepts = ['education', 'learning', 'students', 'curriculum', 'assessment', 
+                               'classroom', 'instruction', 'pedagogy', 'academic']
+            concepts.extend([concept for concept in teaching_concepts if concept in text])
+        
+        # General business concepts
+        concepts.extend([concept for concept in self.business_concepts if concept in text])
+        
+        return list(set(concepts))[:10]  # Limit and remove duplicates
     
     def _extract_key_concepts(self, doc) -> List[str]:
         """Extract key concepts using spaCy entities and noun phrases."""
