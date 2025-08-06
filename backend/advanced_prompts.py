@@ -24,55 +24,70 @@ class AdvancedPromptBuilder:
     """
     
     def build_cover_letter_prompt(self, context: PromptContext) -> str:
-        """Build an intelligent cover letter prompt."""
+        """Build an intelligent cover letter prompt focused on storytelling and company alignment."""
         
-        # Build sections
-        candidate_summary = self._build_candidate_summary(context)
-        relevant_experience = self._build_relevant_experience(context)
-        relevant_projects = self._build_relevant_projects(context)
-        job_alignment = self._build_job_alignment(context)
+        # Extract company values and culture from job description
+        company_insights = self._extract_company_insights(context)
+        personal_connection = self._build_personal_connection(context)
+        storytelling_elements = self._build_storytelling_elements(context)
         
-        prompt = f"""You are an expert career counselor and professional writer specializing in creating compelling cover letters that win interviews.
+        prompt = f"""You are a master storyteller and career strategist who crafts cover letters that create emotional connections between candidates and hiring managers.
 
-MISSION: Create a personalized, compelling cover letter that demonstrates clear value alignment between the candidate and the specific role.
+MISSION: Write a compelling, human cover letter that tells a story of why this specific candidate belongs at this specific company, going beyond just matching skills.
 
-=== JOB INTELLIGENCE ===
-Company: {context.job_analysis.company_name}
+=== THE COMPANY & ROLE ===
+Company: {context.job_analysis.company_name or 'the company'}
 Position: {context.job_analysis.job_title}
-Required Skills: {', '.join(context.job_analysis.required_skills[:8])}
-Key Requirements: {', '.join(context.job_analysis.key_concepts[:5])}
-Experience Level: {context.job_analysis.required_experience_years}+ years
+Key Challenges: {', '.join(context.job_analysis.key_responsibilities[:3]) if context.job_analysis.key_responsibilities else 'Drive innovation and growth'}
 
-=== CANDIDATE PROFILE ===
-{candidate_summary}
+=== COMPANY INSIGHTS ===
+{company_insights}
 
-=== MOST RELEVANT EXPERIENCE ===
-{relevant_experience}
+=== CANDIDATE STORY ===
+{storytelling_elements}
 
-=== MOST RELEVANT PROJECTS ===
-{relevant_projects}
+=== PERSONAL CONNECTION ===
+{personal_connection}
 
-=== STRATEGIC ALIGNMENT ===
-{job_alignment}
+=== STRATEGIC WRITING APPROACH ===
 
-=== WRITING INSTRUCTIONS ===
-Create a professional cover letter that:
+Write a cover letter that follows this psychological framework:
 
-1. **Opening Hook**: Start with a compelling statement that immediately connects the candidate's strongest qualification to the role's biggest need.
+**PARAGRAPH 1 - THE HOOK (Why This Matters to Me)**
+Open with a personal story or moment that connects you to this company's mission. Avoid generic openings. Instead, share what draws you to their work, their values, or their impact. Make it feel like a conversation, not a template.
 
-2. **Value Proposition**: Use the relevant experience and projects above to demonstrate concrete value. Include specific metrics, technologies, and achievements that directly match the job requirements.
+**PARAGRAPH 2 - THE PROOF (Why I'm the Solution)**
+Tell a specific story from your experience that demonstrates you solving a similar challenge they face. Use concrete details, outcomes, and emotions. Don't just list what you did - explain the impact and what you learned.
 
-3. **Company Connection**: Show genuine interest in {context.job_analysis.company_name} and explain why this specific role aligns with the candidate's career goals.
+**PARAGRAPH 3 - THE VISION (Why We're Perfect Together)**
+Paint a picture of what you'll accomplish together. Show you understand their goals and challenges. Explain how your unique background positions you to contribute in ways others can't.
 
-4. **Technical Alignment**: Naturally weave in the required skills ({', '.join(context.job_analysis.required_skills[:5])}) through concrete examples rather than just listing them.
+**CLOSING - THE INVITATION**
+End with genuine enthusiasm and a soft call to action that invites conversation rather than demanding it.
 
-5. **Strong Close**: End with confidence and a clear call to action.
+=== CRITICAL STYLE GUIDELINES ===
 
-**TONE**: Professional yet personable, confident without being arrogant
-**LENGTH**: 3-4 paragraphs, approximately 250-350 words
-**STYLE**: Avoid clichés, use active voice, be specific and quantifiable
+✅ DO:
+- Write like a human having a professional conversation
+- Use "I" statements and personal anecdotes
+- Show genuine enthusiasm and curiosity about the company
+- Include specific details that prove you researched them
+- Connect your values to their mission
+- Use transitional phrases that flow naturally
+- Be conversational yet professional
 
-Generate only the cover letter content without any preamble or explanation."""
+❌ AVOID:
+- Bullet points, dashes, or any formatting
+- Generic phrases like "I am excited to apply"
+- Listing skills without context
+- Overly formal or robotic language
+- Mentioning "your company" generically
+- Template-sounding sentences
+- Irrelevant technical jargon
+
+**TARGET**: 280-320 words of authentic, compelling narrative that makes the hiring manager think "I need to meet this person."
+
+Generate only the cover letter content as natural, flowing paragraphs."""
 
         return prompt
     
@@ -200,6 +215,66 @@ Matching Skills: {matching_skills}
 Experience Match: {"Strong match" if experience_years >= context.job_analysis.required_experience_years else "Emphasize growth potential"}
 Key Selling Points: {', '.join(context.job_analysis.key_concepts[:3])}
 Strategic Focus: Highlight {', '.join(context.job_analysis.required_skills[:3])} expertise"""
+
+    def _extract_company_insights(self, context: PromptContext) -> str:
+        """Extract company values, mission, and culture from job description."""
+        job_text = context.user_profile.get('jobDescription', '').lower()
+        
+        # Common company value indicators
+        value_keywords = {
+            'innovation': ['innovative', 'innovation', 'cutting-edge', 'pioneering', 'breakthrough'],
+            'collaboration': ['collaborative', 'teamwork', 'cross-functional', 'partnership'],
+            'growth': ['growth', 'scale', 'expand', 'development', 'advancement'],
+            'impact': ['impact', 'difference', 'change', 'transform', 'improve'],
+            'customer-focus': ['customer', 'user', 'client', 'experience', 'satisfaction'],
+            'quality': ['quality', 'excellence', 'best-in-class', 'standards', 'premium'],
+            'diversity': ['diverse', 'inclusive', 'equality', 'belonging', 'varied']
+        }
+        
+        detected_values = []
+        for value, keywords in value_keywords.items():
+            if any(keyword in job_text for keyword in keywords):
+                detected_values.append(value)
+        
+        company_name = context.job_analysis.company_name or 'this organization'
+        
+        return f"""Company Values: {', '.join(detected_values[:4]) if detected_values else 'innovation, growth, excellence'}
+Mission Focus: {context.job_analysis.key_concepts[0] if context.job_analysis.key_concepts else 'driving meaningful impact'}
+Why {company_name}: Research their recent achievements, products, or initiatives mentioned in the job description"""
+
+    def _build_storytelling_elements(self, context: PromptContext) -> str:
+        """Build narrative elements from candidate's background."""
+        profile = context.user_profile
+        
+        # Get the most relevant project and experience for storytelling
+        top_project = context.selected_projects[0] if context.selected_projects else None
+        top_experience = context.selected_experiences[0] if context.selected_experiences else None
+        
+        storytelling_text = f"""Professional Background: {profile.get('summary', 'Passionate professional with diverse experience')}
+
+Key Narrative Elements:
+"""
+        
+        if top_experience:
+            storytelling_text += f"- Leadership Story: {top_experience.title} - {top_experience.description[:150]}...\n"
+        
+        if top_project:
+            storytelling_text += f"- Innovation Story: {top_project.title} - {top_project.description[:150]}...\n"
+        
+        storytelling_text += f"""- Skills in Action: {', '.join(context.job_analysis.required_skills[:3])}
+- Personal Values: {profile.get('interests', 'continuous learning, problem-solving, making an impact')}"""
+
+        return storytelling_text
+
+    def _build_personal_connection(self, context: PromptContext) -> str:
+        """Build personal connection points with the company."""
+        profile = context.user_profile
+        company = context.job_analysis.company_name or 'the company'
+        
+        return f"""Personal Motivation: Connect your career goals to {company}'s mission
+Shared Values: Align your interests ({profile.get('interests', 'technology, innovation')}) with their work
+Future Vision: Describe how this role fits your long-term career aspirations
+Unique Perspective: What unique background or viewpoint do you bring?"""
 
 # Global instance
 prompt_builder = AdvancedPromptBuilder()

@@ -13,6 +13,7 @@ import google.generativeai as genai
 from models import ApplicationData, GenerationResponse, ErrorResponse, HealthResponse
 from intelligent_selection_lite import intelligent_selector_lite, JobAnalysis, ProfileAsset
 from advanced_prompts import prompt_builder, PromptContext
+from agent_system import SyncAgentOrchestrator, AgentContext
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +21,10 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Configuration
+AGENT_MODE = os.getenv("AGENT_MODE", "false").lower() == "true"
+logger.info(f"Agent Mode enabled: {AGENT_MODE}")
 
 # Configure Gemini AI
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -37,12 +42,18 @@ if gemini_api_key:
         intelligent_selector_lite.initialize()
         logger.info("V2 Intelligent Selection Pipeline initialized")
         
+        # Initialize V3 Agent System
+        agent_orchestrator = SyncAgentOrchestrator(model)
+        logger.info("V3 Agent System initialized")
+        
     except Exception as e:
         logger.error(f"Failed to initialize Gemini model: {str(e)}")
         model = None
+        agent_orchestrator = None
 else:
     logger.warning("GEMINI_API_KEY not found in environment variables")
     model = None
+    agent_orchestrator = None
 
 # Create FastAPI app
 app = FastAPI(
@@ -106,8 +117,13 @@ async def generate_content(application_data: ApplicationData):
             generated_content = create_mock_content(application_data)
             token_usage = None
         else:
-            # Generate content using Gemini AI
-            generated_content, token_usage = await generate_with_gemini(application_data)
+            # Choose generation method based on configuration
+            if AGENT_MODE and agent_orchestrator:
+                logger.info("Using V3 Agent System for generation")
+                generated_content, token_usage = await generate_with_agents(application_data)
+            else:
+                logger.info("Using V2 Pipeline for generation")
+                generated_content, token_usage = await generate_with_gemini(application_data)
         
         processing_time = time.time() - start_time
         
@@ -137,6 +153,100 @@ async def generate_content(application_data: ApplicationData):
                 "success": False
             }
         )
+
+async def generate_with_agents(application_data: ApplicationData) -> tuple[str, dict]:
+    """
+    V3: Generate content using Multi-Agent System with advanced reasoning.
+    """
+    try:
+        logger.info("=== V3 MULTI-AGENT GENERATION PIPELINE ===")
+        
+        # Step 1: Analyze Job Description (using existing pipeline)
+        logger.info("Step 1: Analyzing job description...")
+        job_analysis = intelligent_selector_lite.analyze_job_description(application_data.job_description)
+        logger.info(f"Found {len(job_analysis.required_skills)} required skills, {len(job_analysis.key_concepts)} key concepts")
+        
+        # Step 2: Rank User Assets (using existing pipeline)
+        logger.info("Step 2: Ranking user profile assets...")
+        user_profile_dict = application_data.user_profile.dict()
+        ranked_assets = intelligent_selector_lite.rank_profile_assets(job_analysis, user_profile_dict)
+        
+        # Apply environment variable thresholds
+        selection_threshold = float(os.getenv("SELECTION_THRESHOLD", 5.0))
+        max_projects = int(os.getenv("MAX_PROJECTS", 3))
+        max_experiences = int(os.getenv("MAX_EXPERIENCES", 2))
+        
+        # Filter by threshold and apply limits
+        filtered_assets = [asset for asset in ranked_assets if asset.score >= selection_threshold]
+        
+        # Separate into projects and experiences
+        projects = [asset for asset in filtered_assets if 'project' in asset.title.lower() or 'built' in asset.description.lower()]
+        experiences = [asset for asset in filtered_assets if asset not in projects]
+        
+        selected_projects = projects[:max_projects]
+        selected_experiences = experiences[:max_experiences]
+        
+        logger.info(f"Selected {len(selected_projects)} projects and {len(selected_experiences)} experiences (threshold: {selection_threshold})")
+        
+        # Step 3: Create Agent Context
+        logger.info("Step 3: Creating agent context...")
+        agent_context = AgentContext(
+            job_description=application_data.job_description,
+            user_profile=user_profile_dict,
+            job_analysis=job_analysis,
+            selected_assets=selected_projects + selected_experiences
+        )
+        
+        # Step 4: Run Agent Pipeline
+        logger.info("Step 4: Running multi-agent generation...")
+        if application_data.content_type == "cover_letter":
+            generated_content = agent_orchestrator.generate_cover_letter(agent_context)
+        else:
+            # Fall back to V2 pipeline for other content types
+            logger.info("Falling back to V2 pipeline for non-cover-letter content")
+            prompt_context = PromptContext(
+                user_profile=user_profile_dict,
+                job_analysis=job_analysis,
+                selected_projects=selected_projects,
+                selected_experiences=selected_experiences,
+                content_type=application_data.content_type,
+                questions=application_data.questions
+            )
+            
+            if application_data.content_type == "questions":
+                prompt = prompt_builder.build_questions_prompt(prompt_context)
+            else:
+                raise ValueError(f"Unsupported content type: {application_data.content_type}")
+            
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=float(os.getenv("TEMPERATURE", 0.7)),
+                    max_output_tokens=int(os.getenv("MAX_TOKENS", 1500)),
+                )
+            )
+            generated_content = response.text
+        
+        # Calculate token usage
+        prompt_estimate = 1000  # Rough estimate for agent prompts
+        completion_tokens = int(len(generated_content.split()) * 1.3)
+        token_usage = {
+            "prompt_tokens": prompt_estimate,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_estimate + completion_tokens,
+            "generation_method": "multi-agent"
+        }
+        
+        logger.info(f"V3 Agent generation successful! Output length: {len(generated_content)} characters")
+        return generated_content, token_usage
+        
+    except Exception as e:
+        logger.error(f"V3 Agent generation error: {str(e)}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        
+        # Fallback to V2 pipeline
+        logger.info("Falling back to V2 pipeline due to agent error")
+        return await generate_with_gemini(application_data)
 
 async def generate_with_gemini(application_data: ApplicationData) -> tuple[str, dict]:
     """
